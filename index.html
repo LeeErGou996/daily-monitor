@@ -1,162 +1,221 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>核心资产 12 小时快照面板</title>
+    <meta charset="UTF-8">
+    <title>财富帝国监控中枢</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #0f172a;
-            color: #e5e7eb;
-            margin: 0;
-            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
             display: flex;
-            justify-content: center;
-        }
-        .container {
-            max-width: 720px;
-            width: 100%;
-            padding: 24px 16px 40px;
-        }
-        .card {
-            background: radial-gradient(circle at top left, #1f2937, #020617);
-            border-radius: 18px;
-            padding: 24px 20px 28px;
-            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-        }
-        h1 {
-            margin: 0 0 8px;
-            font-size: 24px;
-            letter-spacing: 0.03em;
-        }
-        .subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-            margin-bottom: 18px;
-        }
-        #update-time {
-            font-size: 12px;
-            color: #e5e7eb;
-            margin-bottom: 18px;
-        }
-        #data-container {
-            margin-top: 8px;
-            border-radius: 10px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(55, 65, 81, 0.9);
-            padding: 10px 12px;
-        }
-        .asset-row {
-            display: flex;
+            flex-direction: column;
             align-items: center;
-            padding: 8px 4px;
-            border-bottom: 1px dashed rgba(55, 65, 81, 0.9);
+            padding-top: 40px;
+            padding-bottom: 40px;
         }
-        .asset-row:last-child {
-            border-bottom: none;
+        .dashboard {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 30px;
+            width: 700px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .positive {
-            color: #4ade80;
-        }
-        .negative {
-            color: #f97373;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
         }
         button {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: #3b82f6;
             color: white;
             border: none;
-            padding: 9px 16px;
-            border-radius: 999px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 15px;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            transition: background 0.3s;
+            font-weight: bold;
         }
-        button:disabled {
-            opacity: 0.7;
-            cursor: default;
-            box-shadow: none;
+        button:hover { background: #2563eb; }
+        button:disabled { background: #64748b; cursor: wait; }
+
+        .asset-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px dashed #334155;
+            font-size: 17px;
         }
-        .footer {
-            margin-top: 14px;
-            font-size: 11px;
-            color: #6b7280;
+        .positive { color: #22c55e; }
+        .negative { color: #ef4444; }
+        #update-time { font-size: 12px; color: #94a3b8; margin-bottom: 20px;}
+
+        .chart-container {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            position: relative;
+            height: 350px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>核心 ETF 资产监控</h1>
-            <div class="subtitle">每天 2 次快照 · GitHub Actions 自动刷新 · 纯前端静态页面</div>
 
-            <div id="update-time">📡 正在读取最新快照时间…</div>
-
-            <button id="fetchBtn" onclick="fetchData()">
-                🔄 获取最新展示
-            </button>
-
-            <div id="data-container"></div>
-
-            <div class="footer">
-                本页展示为延迟 12 小时内的静态快照，仅用于长期投资组合的价格概览，不构成任何投资建议。
-            </div>
-        </div>
+<div class="dashboard">
+    <div class="header">
+        <h2>🌍 全球核心资产雷达</h2>
+        <button id="fetchBtn" onclick="fetchData()">🔄 获取最新展示</button>
     </div>
+    <div id="update-time">等待初始化...</div>
 
-    <script>
-        async function fetchData() {
-            const btn = document.getElementById('fetchBtn');
-            const container = document.getElementById('data-container');
-            const timeDiv = document.getElementById('update-time');
+    <div id="data-container"></div>
 
-            btn.disabled = true;
-            btn.innerText = "⏳ 读取本地快照...";
+    <div class="chart-container">
+        <div style="text-align:center; font-size:12px; color:#94a3b8; margin-bottom:10px;">
+            📈 <b>帝国崛起之路：自 2026年1月1日 以来的绝对净值走势</b><br>
+            👆 点击图例基金名称可 隐藏/显示 对应折线
+        </div>
+        <canvas id="trendChart"></canvas>
+    </div>
+</div>
 
-            try {
-                const response = await fetch('./data.json?t=' + new Date().getTime());
+<script>
+    let myChart = null;
 
-                if (!response.ok) {
-                    throw new Error("尚未生成 data.json，请等待 GitHub 机器人运行完毕");
-                }
+    async function fetchData() {
+        const btn = document.getElementById('fetchBtn');
+        const container = document.getElementById('data-container');
+        const timeDiv = document.getElementById('update-time');
 
-                const result = await response.json();
+        btn.disabled = true;
+        btn.innerText = "⏳ 加载看板与图表...";
 
-                timeDiv.innerHTML = `📡 <b>最后快照 (慕尼黑时间):</b> ${result.timestamp}<br><span style="color:#64748b; font-size:10px;">(数据由 GitHub Actions 每 12 小时自动更新)</span>`;
-                container.innerHTML = '';
+        try {
+            const resData = await fetch('./data.json?t=' + new Date().getTime());
+            const result = await resData.json();
 
-                result.data.forEach(item => {
-                    const colorClass = item.change_pct > 0 ? 'positive' : (item.change_pct < 0 ? 'negative' : '');
-                    const arrow = item.change_pct > 0 ? '▲' : (item.change_pct < 0 ? '▼' : '-');
-                    const sign = item.change_amt > 0 ? '+' : '';
+            timeDiv.innerHTML = `📡 <b>最后快照 (慕尼黑时间):</b> ${result.timestamp}`;
+            container.innerHTML = '';
 
-                    const rowHtml = `
-                        <div class="asset-row">
-                            <div style="width: 40%;"><strong>${item.name}</strong></div>
-                            <div style="width: 25%; text-align: right;">${item.price.toFixed(2)} €</div>
-                            <div style="width: 35%; text-align: right;" class="${colorClass}">
-                                ${arrow} ${item.change_pct.toFixed(2)}% (${sign}${item.change_amt.toFixed(2)}€)
-                            </div>
+            result.data.forEach(item => {
+                const colorClass = item.change_pct > 0 ? 'positive' : (item.change_pct < 0 ? 'negative' : '');
+                const arrow = item.change_pct > 0 ? '▲' : (item.change_pct < 0 ? '▼' : '-');
+                const sign = item.change_amt > 0 ? '+' : '';
+
+                container.innerHTML += `
+                    <div class="asset-row">
+                        <div style="width: 40%;"><strong>${item.name}</strong></div>
+                        <div style="width: 25%; text-align: right;">${item.price.toFixed(2)} €</div>
+                        <div style="width: 35%; text-align: right;" class="${colorClass}">
+                            ${arrow} ${item.change_pct.toFixed(2)}% (${sign}${item.change_amt.toFixed(2)}€)
                         </div>
-                    `;
-                    container.innerHTML += rowHtml;
-                });
+                    </div>
+                `;
+            });
 
-            } catch (error) {
-                container.innerHTML = `<p class="negative">⚠️ 错误: ${error.message}</p>`;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "🔄 获取最新展示";
-            }
+            const resHist = await fetch('./history.json?t=' + new Date().getTime());
+            const histData = await resHist.json();
+            renderChart(histData);
+
+        } catch (error) {
+            container.innerHTML = `<p class="negative">⚠️ 错误: 尚未生成数据，请去 GitHub Actions 触发一次运行。</p>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🔄 获取最新展示";
+        }
+    }
+
+    function renderChart(histData) {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+
+        if (myChart) {
+            myChart.destroy();
         }
 
-        window.onload = fetchData;
-    </script>
+        const labels = histData.map(d => d.date.substring(5));
+        const vuaaData = histData.map(d => d['VUAA.DE']);
+        const xnasData = histData.map(d => d['XNAS.DE']);
+        const vgweData = histData.map(d => d['VGWE.DE']);
+
+        Chart.defaults.color = '#94a3b8';
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '标普500 (VUAA)',
+                        data: vuaaData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 2
+                    },
+                    {
+                        label: '纳指100 (XNAS)',
+                        data: xnasData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 2
+                    },
+                    {
+                        label: '全球高息 (VGWE)',
+                        data: vgweData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#e2e8f0', usePointStyle: true }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#334155',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    }
+
+    window.onload = fetchData;
+</script>
+
 </body>
 </html>
 
