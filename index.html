@@ -60,9 +60,18 @@
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #334155;
-            position: relative;
-            height: 350px;
             width: 100%;
+        }
+        .chart-box {
+            position: relative;
+            height: 220px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
         }
     </style>
 </head>
@@ -70,7 +79,7 @@
 
 <div class="dashboard">
     <div class="header">
-        <h2>🌍 全球核心资产雷达</h2>
+        <h2>🌍 我关注的ETF</h2>
         <button id="fetchBtn" onclick="fetchData()">🔄 获取最新展示</button>
     </div>
     <div id="update-time">等待初始化...</div>
@@ -79,15 +88,27 @@
 
     <div class="chart-container">
         <div style="text-align:center; font-size:12px; color:#94a3b8; margin-bottom:10px;">
-            📈 <b>帝国崛起之路：自 2026年1月1日 以来的绝对净值走势</b><br>
-            👆 点击图例基金名称可 隐藏/显示 对应折线
+            📈 <b>自 2026年1月1日 以来的绝对净值走势</b> · 每只 ETF 独立一张图
         </div>
-        <canvas id="trendChart"></canvas>
+        <div class="chart-box">
+            <div class="chart-title">标普500 (VUAA)</div>
+            <canvas id="chart-vuaa"></canvas>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">纳指100 (XNAS)</div>
+            <canvas id="chart-xnas"></canvas>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">全球高息 (VGWE)</div>
+            <canvas id="chart-vgwe"></canvas>
+        </div>
     </div>
 </div>
 
 <script>
-    let myChart = null;
+    let chartVUAA = null;
+    let chartXNAS = null;
+    let chartVGWE = null;
 
     async function fetchData() {
         const btn = document.getElementById('fetchBtn');
@@ -122,7 +143,7 @@
 
             const resHist = await fetch('./history.json?t=' + new Date().getTime());
             const histData = await resHist.json();
-            renderChart(histData);
+            renderCharts(histData);
 
         } catch (error) {
             container.innerHTML = `<p class="negative">⚠️ 错误: 尚未生成数据，请去 GitHub Actions 触发一次运行。</p>`;
@@ -132,13 +153,7 @@
         }
     }
 
-    function renderChart(histData) {
-        const ctx = document.getElementById('trendChart').getContext('2d');
-
-        if (myChart) {
-            myChart.destroy();
-        }
-
+    function renderCharts(histData) {
         const labels = histData.map(d => d.date.substring(5));
         const vuaaData = histData.map(d => d['VUAA.DE']);
         const xnasData = histData.map(d => d['XNAS.DE']);
@@ -146,71 +161,129 @@
 
         Chart.defaults.color = '#94a3b8';
 
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
+        if (chartVUAA) chartVUAA.destroy();
+        if (chartXNAS) chartXNAS.destroy();
+        if (chartVGWE) chartVGWE.destroy();
+
+        chartVUAA = new Chart(
+            document.getElementById('chart-vuaa').getContext('2d'),
+            {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
                         label: '标普500 (VUAA)',
                         data: vuaaData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 2,
                         tension: 0.3,
-                        pointRadius: 2
+                        pointRadius: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1
+                        }
                     },
-                    {
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            }
+        );
+
+        chartXNAS = new Chart(
+            document.getElementById('chart-xnas').getContext('2d'),
+            {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
                         label: '纳指100 (XNAS)',
                         data: xnasData,
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderWidth: 2,
                         tension: 0.3,
-                        pointRadius: 2
+                        pointRadius: 1.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1
+                        }
                     },
-                    {
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            }
+        );
+
+        chartVGWE = new Chart(
+            document.getElementById('chart-vgwe').getContext('2d'),
+            {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
                         label: '全球高息 (VGWE)',
                         data: vgweData,
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         borderWidth: 2,
                         tension: 0.3,
-                        pointRadius: 2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
+                        pointRadius: 1.5
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: '#e2e8f0', usePointStyle: true }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1
+                        }
                     },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#cbd5e1',
-                        borderColor: '#334155',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                    },
-                    y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        beginAtZero: false
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            beginAtZero: false
+                        }
                     }
                 }
             }
-        });
+        );
     }
 
     window.onload = fetchData;
