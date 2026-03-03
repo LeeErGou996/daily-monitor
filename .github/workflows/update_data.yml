@@ -29,10 +29,10 @@ jobs:
       - name: 🚀 运行抓取脚本
         run: python fetch_and_save.py
 
-      - name: 💾 自动 Commit 并 Push 生成的 JSON 文件
+      - name: 💾 自动 Commit 并 Push 两个 JSON 文件
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add data.json
-          git commit -m "🤖 Auto-update financial data [skip ci]" || echo "No changes to commit"
+          git add data.json history.json
+          git commit -m "🤖 Auto-update financial data & history [skip ci]" || echo "No changes to commit"
           git push
