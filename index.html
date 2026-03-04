@@ -94,8 +94,11 @@
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
         .input-card { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); }
         .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+        .input-group label { display: block; font-size: 11px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
         .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; outline: none; transition: border 0.3s; box-sizing: border-box; }
+        
+        /* 针对日期选择器的特殊样式修复 */
+        .input-group input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .input-group input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
         
         .result-card { background: rgba(15, 23, 42, 0.8); border-radius: 16px; padding: 25px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.1); display: flex; flex-direction: column; justify-content: center; }
@@ -171,7 +174,7 @@
         </div>
         <div class="grid-2col">
             <div class="input-card">
-                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="1000" oninput="calculateCPPI()"></div>
+                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="1000" step="500" oninput="calculateCPPI()"></div>
                 <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100" oninput="calculateCPPI()"></div>
                 <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1" oninput="calculateCPPI()"></div>
             </div>
@@ -185,23 +188,44 @@
         <div class="header">
             <h2 style="color: var(--alm-purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);">
                 <span style="background: var(--alm-purple); width: 6px; height: 22px; display: inline-block; border-radius: 3px;"></span>
-                ALM HORIZON (DCA ACTIVE)
+                ALM HORIZON
             </h2>
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Dynamic Cash Flow Matching</div>
         </div>
-        <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-            The engine now accounts for your continuous <strong style="color:var(--accent-blue)">Daily Contributions</strong>. Watch the required CAGR drop dramatically as your saving habits power the portfolio.
+        <p style="color: var(--text-sub); font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+            The engine scales your <strong style="color:var(--accent-blue)">Daily Contributions</strong> over your exact timeline. Time boundaries define your Required CAGR.
         </p>
         
         <div class="grid-2col">
             <div class="input-card">
-                <div style="display: flex; gap: 15px;">
-                    <div class="input-group" style="flex:1;"><label>Initial Capital (€)</label><input type="number" id="alm-initial" value="1000" step="1000" oninput="calculateALM()"></div>
-                    <div class="input-group" style="flex:1;"><label style="color:var(--accent-blue);">Daily DCA (€)</label><input type="number" id="alm-daily" value="20" step="5" style="border-color:var(--accent-blue);" oninput="calculateALM()"></div>
+                <div style="display: flex; gap: 15px; margin-bottom: 5px;">
+                    <div class="input-group" style="flex:1;">
+                        <label>Start Month</label>
+                        <input type="month" id="alm-start-date" value="2026-01" oninput="calculateALM()">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label style="color:var(--alm-purple);">Target Month</label>
+                        <input type="month" id="alm-target-date" value="2051-01" style="border-color:rgba(192, 132, 252, 0.4);" oninput="calculateALM()">
+                    </div>
                 </div>
-                <div class="input-group"><label>Target Wealth Goal (€)</label><input type="number" id="alm-target" value="1000000" step="50000" oninput="calculateALM()"></div>
-                <div class="input-group"><label>Target Year</label><input type="number" id="alm-year" value="2051" step="1" oninput="calculateALM()"></div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 5px;">
+                    <div class="input-group" style="flex:1;">
+                        <label>Initial Capital (€)</label>
+                        <input type="number" id="alm-initial" value="1000" step="1000" oninput="calculateALM()">
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label style="color:var(--accent-blue);">Daily DCA (€)</label>
+                        <input type="number" id="alm-daily" value="20" step="1" style="border-color:var(--accent-blue);" oninput="calculateALM()">
+                    </div>
+                </div>
+                
+                <div class="input-group" style="margin-bottom:0;">
+                    <label>Target Wealth Goal (€)</label>
+                    <input type="number" id="alm-target" value="1000000" step="5000" oninput="calculateALM()">
+                </div>
             </div>
+
             <div class="result-card" id="alm-results-container" style="border-color: rgba(192, 132, 252, 0.3); box-shadow: 0 0 30px rgba(192, 132, 252, 0.1);">
                 <div style="text-align:center; color:#c084fc; font-size:14px;" class="pulse">Calculating projection...</div>
             </div>
@@ -216,7 +240,7 @@
     let cachedHistData = []; 
     let globalCumulativeReturn = 0;
 
-    // 全局资产真实占比 (默认为 4:4:2)
+    // 全局资产真实占比
     let wV = 0.40, wX = 0.40, wG = 0.20;
 
     // ====== 路由视图切换 ======
@@ -339,30 +363,36 @@
         `;
     }
 
-    // ====== 视图 3: ALM Engine (引入二分法推算定投所需的年化) ======
+    // ====== 视图 3: 高精度 ALM Engine (支持年月漂移) ======
     function calculateALM() {
         if (!cachedHistData || cachedHistData.length === 0) return;
 
         const initialW = parseFloat(document.getElementById('alm-initial').value) || 0;
         const dailyPMT = parseFloat(document.getElementById('alm-daily').value) || 0;
         const targetW = parseFloat(document.getElementById('alm-target').value) || 1000000;
-        const targetYr = parseInt(document.getElementById('alm-year').value) || 2051;
         
-        const startYr = 2026;
-        const yearsToGoal = targetYr - startYr;
-        if(yearsToGoal <= 0) return;
-        
-        const totalTradingDays = yearsToGoal * 252; // 假设每年 252 个交易日
+        const startStr = document.getElementById('alm-start-date').value;
+        const targetStr = document.getElementById('alm-target-date').value;
 
-        // 1. 二分法计算加入了“每天定投现金流”后，实际所需的真实日均复合增长率
-        let low = -0.01; // 极端暴跌
-        let high = 0.01; // 极端暴涨
-        let mid = 0;
+        if (!startStr || !targetStr) return;
+        const startD = new Date(startStr);
+        const targetD = new Date(targetStr);
+
+        // 校验目标日期必须大于起始日期
+        const yearsToGoal = (targetD - startD) / (1000 * 60 * 60 * 24 * 365.25);
+        if (yearsToGoal <= 0) {
+            document.getElementById('alm-results-container').innerHTML = `<div style="text-align:center; color:var(--down-red); font-size:14px; padding:20px;">⚠️ Target Date must be strictly after Start Date.</div>`;
+            return;
+        }
+
+        const totalTradingDays = yearsToGoal * 252; // 精确折算的交易日
+
+        // 1. 二分法计算加入了“每天定投现金流”后，所需的真实日均复合增长率
+        let low = -0.01; let high = 0.01; let mid = 0;
         for(let i=0; i<100; i++){
             mid = (low + high) / 2;
             let fv = 0;
             if (mid !== 0) {
-                // 年金终值公式 (复利部分 + 定投部分)
                 fv = initialW * Math.pow(1 + mid, totalTradingDays) + dailyPMT * (Math.pow(1 + mid, totalTradingDays) - 1) / mid;
             } else {
                 fv = initialW + dailyPMT * totalTradingDays;
@@ -371,63 +401,83 @@
         }
         
         const reqDailyRate = mid;
-        // 折算成名义年化收益率 CAGR
         const requiredCAGR = Math.pow(1 + reqDailyRate, 252) - 1;
 
-        // 2. 模拟从建仓日到今天的真实资产情况 V(t) - 包含定投！
-        const firstD = cachedHistData[0];
+        // 2. 寻找历史数据的起跑线 (匹配 Start Date)
+        let startIndex = 0;
+        for(let i=0; i<cachedHistData.length; i++){
+            if(new Date(cachedHistData[i].date) >= startD){
+                startIndex = i;
+                break;
+            }
+        }
+        
+        const firstD = cachedHistData[startIndex];
         let sharesV = (initialW * wV) / firstD['VUAA.DE'];
         let sharesX = (initialW * wX) / firstD['XNAS.DE'];
         let sharesG = (initialW * wG) / firstD['VGWE.DE'];
 
         let currentLiability = initialW;
-        
         const labels = [firstD.date];
         const actualPath = [initialW];
         const liabilityPath = [initialW];
 
-        for(let i = 1; i < cachedHistData.length; i++) {
+        // 遍历选定区间内的历史真实走势
+        for(let i = startIndex + 1; i < cachedHistData.length; i++) {
             const dayData = cachedHistData[i];
             labels.push(dayData.date);
 
-            // 每天发工资打入 20 欧，按权重分别买入三只 ETF 真实份额
             sharesV += (dailyPMT * wV) / dayData['VUAA.DE'];
             sharesX += (dailyPMT * wX) / dayData['XNAS.DE'];
             sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
 
-            // 结算今天的真实身价 V(t)
             let dailyActual = (sharesV * dayData['VUAA.DE']) + (sharesX * dayData['XNAS.DE']) + (sharesG * dayData['VGWE.DE']);
             actualPath.push(dailyActual);
 
-            // 结算今天的目标身价 L(t) (按照推算出的完美每日增长率 + 新存入的本金)
             currentLiability = currentLiability * (1 + reqDailyRate) + dailyPMT;
             liabilityPath.push(currentLiability);
         }
 
-        const currentActual = actualPath[actualPath.length - 1];
-        const currentTarget = liabilityPath[liabilityPath.length - 1];
-        const fundingRatio = (currentActual / currentTarget) * 100;
+        const currentActual = actualPath[actualPath.length - 1] || initialW;
+        const currentTarget = liabilityPath[liabilityPath.length - 1] || initialW;
+        const fundingRatio = (currentTarget > 0) ? (currentActual / currentTarget) * 100 : 0;
 
-        // 3. 补全未来投影到图表右侧 (以年为单位跳跃投影)
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        let projectedLiability = currentLiability;
-        
-        for(let y = currentYear + 1; y <= targetYr; y++) {
-            labels.push(y.toString());
-            // 每年发生 252 次定投和复利
-            for(let d=0; d<252; d++) {
-                projectedLiability = projectedLiability * (1 + reqDailyRate) + dailyPMT;
+        // 3. 未来折线投影 (按年步进，直至目标月份)
+        const lastHistDate = new Date(cachedHistData[cachedHistData.length - 1].date);
+        let projYear = lastHistDate.getFullYear() + 1;
+        let endYear = targetD.getFullYear();
+
+        for(let y = projYear; y <= endYear; y++) {
+            // 设置推演点：每年的1月1日，如果是最后一年，就是目标月份
+            let futureDate = new Date(y, 0, 1);
+            if (futureDate > targetD) futureDate = targetD;
+            
+            // 为了UI整洁，如果是精确的目标月，直接显示年月，否则只显示年
+            let labelStr = (y === endYear) ? targetStr : y.toString();
+            labels.push(labelStr);
+            
+            // 计算到达该未来点，一共流逝了多少个“精确的交易日”
+            let daysFromStart = (futureDate - startD) / (1000 * 3600 * 24);
+            let tDays = daysFromStart * (252 / 365.25);
+            
+            let projL = 0;
+            if (reqDailyRate !== 0) {
+                projL = initialW * Math.pow(1 + reqDailyRate, tDays) + dailyPMT * (Math.pow(1 + reqDailyRate, tDays) - 1) / reqDailyRate;
+            } else {
+                projL = initialW + dailyPMT * tDays;
             }
-            liabilityPath.push(projectedLiability);
-            actualPath.push(null); 
+            
+            liabilityPath.push(projL);
+            actualPath.push(null); // 未来没有真实资产净值
+            
+            if (futureDate.getTime() === targetD.getTime()) break;
         }
 
-        // 4. UI 渲染
+        // 4. UI 渲染更新
         let statusHtml = '';
-        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: ON TRACK TO €1 MILLION</div>`; }
+        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: ON TRACK TO REACH GOAL</div>`; }
         else if (fundingRatio >= 95) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MAINTAIN DCA DISCIPLINE</div>`; }
-        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE DAILY DEPOSIT</div>`; }
+        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: CONSIDER INCREASING DEPOSIT</div>`; }
 
         document.getElementById('alm-results-container').innerHTML = `
             <div class="res-row"><span class="res-label">Required CAGR <span style="font-size:10px;color:var(--accent-blue);">(with DCA)</span></span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
