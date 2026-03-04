@@ -96,8 +96,6 @@
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 11px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
         .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; outline: none; transition: border 0.3s; box-sizing: border-box; }
-        
-        /* 针对日期选择器的特殊样式修复 */
         .input-group input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
         .input-group input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
         
@@ -193,7 +191,7 @@
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Dynamic Cash Flow Matching</div>
         </div>
         <p style="color: var(--text-sub); font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
-            The engine scales your <strong style="color:var(--accent-blue)">Daily Contributions</strong> over your exact timeline. Time boundaries define your Required CAGR.
+            The engine projects your portfolio growth month-by-month. Balancing your <strong style="color:var(--accent-blue)">Daily DCA</strong> and time horizon is key to a realistic Required CAGR.
         </p>
         
         <div class="grid-2col">
@@ -240,10 +238,8 @@
     let cachedHistData = []; 
     let globalCumulativeReturn = 0;
 
-    // 全局资产真实占比
     let wV = 0.40, wX = 0.40, wG = 0.20;
 
-    // ====== 路由视图切换 ======
     function switchView(viewName) {
         document.querySelectorAll('.dashboard-container').forEach(el => el.classList.add('hidden-view'));
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -254,7 +250,6 @@
         if(viewName === 'alm') calculateALM();
     }
 
-    // ====== 资产配比动态更新器 ======
     function updateWeights() {
         let rawV = parseInt(document.getElementById('w-vuaa').value);
         let rawX = parseInt(document.getElementById('w-xnas').value);
@@ -282,7 +277,6 @@
         if (!document.getElementById('view-alm').classList.contains('hidden-view')) calculateALM();
     }
 
-    // ====== 图表配置 ======
     Chart.defaults.color = '#64748b';
     Chart.defaults.font.family = 'monospace';
     const commonOptions = {
@@ -363,7 +357,7 @@
         `;
     }
 
-    // ====== 视图 3: 高精度 ALM Engine (支持年月漂移) ======
+    // ====== 逐月高精度 ALM 推演算法 ======
     function calculateALM() {
         if (!cachedHistData || cachedHistData.length === 0) return;
 
@@ -375,20 +369,26 @@
         const targetStr = document.getElementById('alm-target-date').value;
 
         if (!startStr || !targetStr) return;
-        const startD = new Date(startStr);
-        const targetD = new Date(targetStr);
+        
+        // 解析 yyyy-mm 为日期对象 (默认每月的 1 号)
+        const startParts = startStr.split('-');
+        const targetParts = targetStr.split('-');
+        const startD = new Date(startParts[0], startParts[1] - 1, 1);
+        const targetD = new Date(targetParts[0], targetParts[1] - 1, 1);
 
-        // 校验目标日期必须大于起始日期
-        const yearsToGoal = (targetD - startD) / (1000 * 60 * 60 * 24 * 365.25);
-        if (yearsToGoal <= 0) {
-            document.getElementById('alm-results-container').innerHTML = `<div style="text-align:center; color:var(--down-red); font-size:14px; padding:20px;">⚠️ Target Date must be strictly after Start Date.</div>`;
+        // 校验：目标月必须在起始月之后
+        if (targetD <= startD) {
+            document.getElementById('alm-results-container').innerHTML = `<div style="text-align:center; color:var(--down-red); font-size:14px; padding:20px;">⚠️ Target Month must be strictly after Start Month.</div>`;
+            if (chartALM) { chartALM.destroy(); chartALM = null; }
             return;
         }
 
-        const totalTradingDays = yearsToGoal * 252; // 精确折算的交易日
+        // 计算精确的自然天数差异，并折算成交易日 (一年按 252 天算)
+        const naturalDaysToGoal = (targetD - startD) / (1000 * 60 * 60 * 24);
+        const totalTradingDays = naturalDaysToGoal * (252 / 365.25);
 
         // 1. 二分法计算加入了“每天定投现金流”后，所需的真实日均复合增长率
-        let low = -0.01; let high = 0.01; let mid = 0;
+        let low = -0.02; let high = 0.02; let mid = 0;
         for(let i=0; i<100; i++){
             mid = (low + high) / 2;
             let fv = 0;
@@ -407,8 +407,7 @@
         let startIndex = 0;
         for(let i=0; i<cachedHistData.length; i++){
             if(new Date(cachedHistData[i].date) >= startD){
-                startIndex = i;
-                break;
+                startIndex = i; break;
             }
         }
         
@@ -418,23 +417,30 @@
         let sharesG = (initialW * wG) / firstD['VGWE.DE'];
 
         let currentLiability = initialW;
-        const labels = [firstD.date];
-        const actualPath = [initialW];
-        const liabilityPath = [initialW];
+        const labels = [];
+        const actualPath = [];
+        const liabilityPath = [];
 
-        // 遍历选定区间内的历史真实走势
-        for(let i = startIndex + 1; i < cachedHistData.length; i++) {
+        // 遍历历史真实走势 (这里的数据依然是每天的，保证 V(t) 的精细度)
+        for(let i = startIndex; i < cachedHistData.length; i++) {
             const dayData = cachedHistData[i];
-            labels.push(dayData.date);
+            
+            // 只保留年月格式的 label (如果遇到该月的第一天)，避免 X 轴太拥挤，但底层依然是每日计算
+            if (i === startIndex || dayData.date.substring(8, 10) === "01" || dayData.date.substring(8, 10) === "02") {
+                labels.push(dayData.date.substring(0, 7)); 
+            } else {
+                labels.push(''); // 空 label，让点存在但不显示文字
+            }
 
-            sharesV += (dailyPMT * wV) / dayData['VUAA.DE'];
-            sharesX += (dailyPMT * wX) / dayData['XNAS.DE'];
-            sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
+            if (i > startIndex) {
+                sharesV += (dailyPMT * wV) / dayData['VUAA.DE'];
+                sharesX += (dailyPMT * wX) / dayData['XNAS.DE'];
+                sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
+                currentLiability = currentLiability * (1 + reqDailyRate) + dailyPMT;
+            }
 
             let dailyActual = (sharesV * dayData['VUAA.DE']) + (sharesX * dayData['XNAS.DE']) + (sharesG * dayData['VGWE.DE']);
             actualPath.push(dailyActual);
-
-            currentLiability = currentLiability * (1 + reqDailyRate) + dailyPMT;
             liabilityPath.push(currentLiability);
         }
 
@@ -442,35 +448,29 @@
         const currentTarget = liabilityPath[liabilityPath.length - 1] || initialW;
         const fundingRatio = (currentTarget > 0) ? (currentActual / currentTarget) * 100 : 0;
 
-        // 3. 未来折线投影 (按年步进，直至目标月份)
+        // 3. 未来折线投影 (改为逐月递进！)
         const lastHistDate = new Date(cachedHistData[cachedHistData.length - 1].date);
-        let projYear = lastHistDate.getFullYear() + 1;
-        let endYear = targetD.getFullYear();
+        
+        // 从当前时间的下一个月开始模拟
+        let projDate = new Date(lastHistDate.getFullYear(), lastHistDate.getMonth() + 1, 1);
+        let projectedLiability = currentLiability;
 
-        for(let y = projYear; y <= endYear; y++) {
-            // 设置推演点：每年的1月1日，如果是最后一年，就是目标月份
-            let futureDate = new Date(y, 0, 1);
-            if (futureDate > targetD) futureDate = targetD;
+        while (projDate <= targetD) {
+            // 将 yyyy-m-d 格式化为 yyyy-mm
+            let yyyy = projDate.getFullYear();
+            let mm = String(projDate.getMonth() + 1).padStart(2, '0');
+            labels.push(`${yyyy}-${mm}`);
             
-            // 为了UI整洁，如果是精确的目标月，直接显示年月，否则只显示年
-            let labelStr = (y === endYear) ? targetStr : y.toString();
-            labels.push(labelStr);
-            
-            // 计算到达该未来点，一共流逝了多少个“精确的交易日”
-            let daysFromStart = (futureDate - startD) / (1000 * 3600 * 24);
-            let tDays = daysFromStart * (252 / 365.25);
-            
-            let projL = 0;
-            if (reqDailyRate !== 0) {
-                projL = initialW * Math.pow(1 + reqDailyRate, tDays) + dailyPMT * (Math.pow(1 + reqDailyRate, tDays) - 1) / reqDailyRate;
-            } else {
-                projL = initialW + dailyPMT * tDays;
+            // 每个月模拟约 21 个交易日 (252 / 12)
+            for(let d=0; d<21; d++) {
+                projectedLiability = projectedLiability * (1 + reqDailyRate) + dailyPMT;
             }
             
-            liabilityPath.push(projL);
-            actualPath.push(null); // 未来没有真实资产净值
-            
-            if (futureDate.getTime() === targetD.getTime()) break;
+            liabilityPath.push(projectedLiability);
+            actualPath.push(null); // 未来部分绿线为空
+
+            // 步进到下一个月
+            projDate.setMonth(projDate.getMonth() + 1);
         }
 
         // 4. UI 渲染更新
@@ -499,15 +499,25 @@
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Actual V(t) w/ DCA', data: actualPath, borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'), borderWidth: 2, fill: true, tension: 0.1, pointRadius: 2, hitRadius: 10 },
-                    { label: 'Target Liability L(t)', data: liabilityPath, borderColor: '#c084fc', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2, hitRadius: 10 }
+                    { label: 'Actual V(t) w/ DCA', data: actualPath, borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'), borderWidth: 2, fill: true, tension: 0.1, pointRadius: 0, hitRadius: 10 },
+                    { label: 'Target Liability L(t)', data: liabilityPath, borderColor: '#c084fc', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 0, hitRadius: 10 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                 animation: { duration: 0 }, 
                 plugins: { legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
-                scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } } }
+                scales: { 
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { 
+                            color: '#64748b',
+                            maxTicksLimit: 12, // 限制 X 轴显示的标签数量，避免拥挤
+                            maxRotation: 0 
+                        } 
+                    }, 
+                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } } 
+                }
             }
         });
     }
