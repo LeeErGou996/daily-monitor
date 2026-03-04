@@ -1,20 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My ETF Dashboard | Project 2026</title>
+    <title>My ETF Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* ================== 全局与色彩 (保持原样) ================== */
+        /* ================== 全局与色彩 ================== */
         :root {
             --bg-color: #0b1120;
             --panel-bg: rgba(15, 23, 42, 0.6);
+            --sidebar-bg: rgba(11, 17, 32, 0.85);
             --border-glow: rgba(56, 189, 248, 0.2);
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --accent-blue: #38bdf8;
             --up-green: #10b981;
             --down-red: #ef4444;
+            --warning-yellow: #f59e0b;
+            --alm-purple: #c084fc;
         }
 
         body {
@@ -25,288 +28,394 @@
                 radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
             color: var(--text-main);
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 50px 20px;
             margin: 0;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .dashboard {
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border-radius: 20px;
-            padding: 35px;
-            width: 100%;
-            max-width: 800px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 0 1px var(--border-glow);
-            transition: all 0.3s ease;
+        /* ================== 左侧边栏 (Sidebar) ================== */
+        .sidebar {
+            width: 280px; min-width: 280px; background: var(--sidebar-bg); backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column;
+            padding: 30px 0; box-shadow: 5px 0 20px rgba(0,0,0,0.5); z-index: 10;
         }
 
-        .dashboard:hover {
-            box-shadow: 0 0 50px rgba(56, 189, 248, 0.1), inset 0 0 0 1px rgba(56, 189, 248, 0.4);
+        .brand {
+            font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #fff;
+            padding: 0 25px 30px 25px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex; align-items: center; gap: 10px; text-shadow: 0 0 15px var(--accent-blue);
         }
 
-        /* ================== 头部区域 (移除按钮，保留标题和状态) ================== */
-        .header {
-            display: flex;
-            justify-content: space-between; /* 保持两端对齐 */
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 20px;
-            margin-bottom: 25px;
+        .menu-label { font-size: 11px; color: var(--text-sub); letter-spacing: 1px; padding: 20px 25px 10px 25px; text-transform: uppercase; }
+
+        .menu-item {
+            padding: 15px 25px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s;
+            font-size: 14px; font-weight: 500; color: var(--text-sub); border-left: 3px solid transparent;
+        }
+        .menu-item:hover { background: rgba(56, 189, 248, 0.05); color: var(--text-main); }
+        .menu-item.active { border-left-color: var(--accent-blue); background: rgba(56, 189, 248, 0.1); color: #fff; }
+
+        /* ================== 主内容区 (Main Content) ================== */
+        .main-content {
+            flex-grow: 1; overflow-y: auto; padding: 40px; display: flex; justify-content: center; align-items: flex-start; position: relative;
+        }
+        
+        .dashboard-container {
+            background: var(--panel-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px; padding: 35px; width: 100%; max-width: 850px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 0 1px var(--border-glow); transition: opacity 0.3s ease;
         }
 
-        h2 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-        }
+        .hidden-view { display: none !important; opacity: 0; }
 
-        h2::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 24px;
-            background: var(--accent-blue);
-            border-radius: 4px;
-            box-shadow: 0 0 10px var(--accent-blue);
-        }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 20px; margin-bottom: 25px; }
+        h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+        h2::before { content: ''; display: inline-block; width: 6px; height: 22px; background: var(--accent-blue); border-radius: 3px; box-shadow: 0 0 10px var(--accent-blue); }
+        #update-time { font-size: 13px; color: var(--text-sub); font-family: monospace; display: flex; align-items: center; gap: 6px; }
 
-        /* 将状态灯移到右上角，替代原来的按钮位置 */
-        #update-time { 
-            font-size: 13px; 
-            color: var(--text-sub); 
-            font-family: monospace;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        /* ====== Shared UI Components ====== */
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
+        .input-card { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 1px; }
+        .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 15px; border-radius: 8px; font-family: monospace; font-size: 16px; outline: none; transition: border 0.3s; box-sizing: border-box; }
+        .input-group input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+        .input-desc { font-size: 11px; color: #64748b; margin-top: 5px; line-height: 1.4; }
+        
+        .result-card { background: rgba(15, 23, 42, 0.8); border-radius: 16px; padding: 25px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.1); display: flex; flex-direction: column; justify-content: center; }
+        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-family: monospace; font-size: 16px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .res-label { color: var(--text-sub); }
+        .res-val { font-weight: bold; font-size: 18px; }
+        .status-badge { text-align: center; padding: 15px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 20px; letter-spacing: 1px; transition: all 0.3s; }
 
-        /* ================== 数据列表区 (保持原样) ================== */
-        #data-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .asset-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            transition: transform 0.2s, background 0.2s;
-            font-family: monospace;
-            font-size: 16px;
-        }
-
-        .asset-row:hover {
-            transform: translateY(-2px);
-            background: rgba(0, 0, 0, 0.4);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .asset-name { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 17px; }
+        /* Dashboard Specific */
+        .asset-row { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(0, 0, 0, 0.2); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.03); transition: transform 0.2s; font-family: monospace; font-size: 16px; margin-bottom: 12px;}
+        .asset-row:hover { transform: translateY(-2px); background: rgba(0, 0, 0, 0.4); border-color: rgba(255, 255, 255, 0.1); }
         .positive { color: var(--up-green); text-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
         .negative { color: var(--down-red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .chart-grid { display: grid; grid-template-columns: 1fr; gap: 25px; margin-top: 30px;}
+        .chart-box { position: relative; height: 220px; background: rgba(0, 0, 0, 0.15); border-radius: 12px; padding: 15px; border: 1px solid rgba(255, 255, 255, 0.02); }
+        .chart-title { position: absolute; top: 15px; left: 20px; font-size: 12px; color: var(--text-sub); font-weight: 600; z-index: 10; background: rgba(15, 23, 42, 0.8); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); }
 
-        /* ================== 图表区 (保持原样) ================== */
-        .chart-container { margin-top: 40px; }
-        .section-title {
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-sub);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 10px;
+        /* CPPI & ALM Specific */
+        .cppi-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 20px; margin-bottom: 15px; overflow: hidden; }
+        .cppi-bar-fill { height: 100%; background: var(--accent-blue); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        .alm-chart-container { width: 100%; height: 280px; margin-top: 30px; background: rgba(0,0,0,0.15); border-radius: 16px; padding: 20px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.02); }
+
+        /* 执行动作按钮 (NEW) */
+        .action-btn {
+            width: 100%; margin-top: 15px; background: rgba(192, 132, 252, 0.1); 
+            color: var(--alm-purple); border: 1px solid var(--alm-purple); 
+            padding: 14px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; 
+            cursor: pointer; transition: all 0.3s; letter-spacing: 1px;
         }
-        .chart-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
-        .chart-box {
-            position: relative;
-            height: 240px;
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 12px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.02);
-        }
-        .chart-title {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            font-size: 12px;
-            color: var(--text-sub);
-            font-weight: 600;
-            z-index: 10;
-            background: rgba(15, 23, 42, 0.8);
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        .action-btn:hover {
+            background: var(--alm-purple); color: #fff; box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);
         }
 
-        /* 加载动画 */
         .pulse { animation: pulse-animation 2s infinite; }
         @keyframes pulse-animation { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <div class="header">
-        <h2>My ETF Dashboard</h2>
-        <div id="update-time">
-            <span style="display:inline-block; width:8px; height:8px; background:#eab308; border-radius:50%;" id="status-dot" class="pulse"></span>
-            INITIALIZING...
-        </div>
-    </div>
+<div class="sidebar">
+    <div class="brand"><span>⚡</span> QUANT ENGINE</div>
+    <div class="menu-label">CORE MODULES</div>
+    <div class="menu-item active" id="btn-view-dashboard" onclick="switchView('dashboard')"><span>📊</span> <span>Global Market</span></div>
+    <div class="menu-item" id="btn-view-cppi" onclick="switchView('cppi')"><span>🛡️</span> <span>CPPI Simulator</span></div>
+    <div class="menu-item" id="btn-view-alm" onclick="switchView('alm')"><span>🧭</span> <span>ALM Horizon</span></div>
+</div>
+
+<div class="main-content">
     
-    <div id="data-container">
-        <div class="asset-row pulse" style="height: 24px;"></div>
-        <div class="asset-row pulse" style="height: 24px;"></div>
-        <div class="asset-row pulse" style="height: 24px;"></div>
+    <div class="dashboard-container" id="view-dashboard">
+        <div class="header">
+            <h2>GLOBAL EQUITIES</h2>
+            <div id="update-time"><span style="display:inline-block; width:8px; height:8px; background:#eab308; border-radius:50%;" id="status-dot" class="pulse"></span> INITIALIZING...</div>
+        </div>
+        <div id="data-container"></div>
+        <div class="chart-grid">
+            <div class="chart-box"><div class="chart-title">S&P 500 (VUAA)</div><canvas id="chart-vuaa"></canvas></div>
+            <div class="chart-box"><div class="chart-title">NASDAQ 100 (XNAS)</div><canvas id="chart-xnas"></canvas></div>
+            <div class="chart-box"><div class="chart-title">HIGH DIVIDEND (VGWE)</div><canvas id="chart-vgwe"></canvas></div>
+        </div>
     </div>
 
-    <div class="chart-container">
-        <div class="section-title">INCEPTION HORIZON (SINCE JAN 2026)</div>
-        <div class="chart-grid">
-            <div class="chart-box">
-                <div class="chart-title">S&P 500 (VUAA.DE)</div>
-                <canvas id="chart-vuaa"></canvas>
+    <div class="dashboard-container hidden-view" id="view-cppi">
+        <div class="header">
+            <h2>CPPI RISK SIMULATOR</h2>
+            <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">TUM Quant Algorithm</div>
+        </div>
+        <div class="grid-2col">
+            <div class="input-card">
+                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="10000"></div>
+                <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100"></div>
+                <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1"></div>
+                <button class="action-btn" style="color:var(--accent-blue); border-color:var(--accent-blue); background:rgba(56,189,248,0.1);" onclick="calculateCPPI()">🔄 RUN SIMULATION</button>
             </div>
-            <div class="chart-box">
-                <div class="chart-title">NASDAQ 100 (XNAS.DE)</div>
-                <canvas id="chart-xnas"></canvas>
-            </div>
-            <div class="chart-box">
-                <div class="chart-title">HIGH DIVIDEND (VGWE.DE)</div>
-                <canvas id="chart-vgwe"></canvas>
+            <div class="result-card" id="cppi-results-container">
+                 <div style="text-align:center; color:#64748b; font-size:14px;" class="pulse">Awaiting manual execution...</div>
             </div>
         </div>
     </div>
+
+    <div class="dashboard-container hidden-view" id="view-alm">
+        <div class="header">
+            <h2 style="color: var(--alm-purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);">
+                <span style="background: var(--alm-purple); width: 6px; height: 22px; display: inline-block; border-radius: 3px;"></span>
+                ALM HORIZON
+            </h2>
+            <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Liability Matching</div>
+        </div>
+        <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+            Asset Liability Management tracks your Actual Wealth <strong style="color:var(--up-green)">V(t)</strong> against your Required Target Glidepath <strong style="color:var(--alm-purple)">L(t)</strong>.
+        </p>
+        
+        <div class="grid-2col">
+            <div class="input-card">
+                <div class="input-group">
+                    <label>Initial Investment 2026 (€)</label>
+                    <input type="number" id="alm-initial" value="10000" step="1000">
+                    <div class="input-desc">Starting Capital at Inception.</div>
+                </div>
+                <div class="input-group">
+                    <label>Target Wealth Goal (€)</label>
+                    <input type="number" id="alm-target" value="1000000" step="50000">
+                    <div class="input-desc">The ultimate liability to cover (e.g., €1 Million).</div>
+                </div>
+                <div class="input-group">
+                    <label>Target Year</label>
+                    <input type="number" id="alm-year" value="2051" step="1">
+                    <div class="input-desc">Year of Financial Independence.</div>
+                </div>
+                
+                <button class="action-btn" onclick="calculateALM()">🚀 GENERATE ALM PROJECTION</button>
+            </div>
+
+            <div class="result-card" id="alm-results-container" style="border-color: rgba(192, 132, 252, 0.3); box-shadow: 0 0 30px rgba(192, 132, 252, 0.1);">
+                <div style="text-align:center; color:#c084fc; font-size:14px; opacity:0.6;" class="pulse">Click button to generate path...</div>
+            </div>
+        </div>
+
+        <div class="alm-chart-container">
+            <canvas id="chart-alm"></canvas>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    let chartVUAA = null;
-    let chartXNAS = null;
-    let chartVGWE = null;
+    let chartVUAA = null, chartXNAS = null, chartVGWE = null, chartALM = null;
+    let cachedHistData = []; 
 
+    // ====== 路由视图切换 ======
+    function switchView(viewName) {
+        document.querySelectorAll('.dashboard-container').forEach(el => el.classList.add('hidden-view'));
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
+        document.getElementById(`btn-view-${viewName}`).classList.add('active');
+        
+        // 切换时不自动计算，让用户手动点击按钮
+    }
+
+    // ====== 数据抓取与图表基础 ======
     Chart.defaults.color = '#64748b';
     Chart.defaults.font.family = 'monospace';
-    const commonChartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#fff',
-                bodyColor: '#38bdf8',
-                bodyFont: { size: 14, weight: 'bold' },
-                borderColor: '#334155',
-                borderWidth: 1,
-                padding: 10,
-                displayColors: false,
-                callbacks: { label: function(context) { return context.parsed.y.toFixed(2) + ' €'; } }
-            }
-        },
-        scales: {
-            x: { grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0 } },
-            y: { grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false }, beginAtZero: false, position: 'right' }
-        },
-        elements: {
-            line: { tension: 0.4 },
-            point: { radius: 0, hitRadius: 10, hoverRadius: 4 }
-        }
+    const commonOptions = {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
+        scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right' } },
+        elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } }
     };
 
-    // 自动加载函数 (移除了按钮状态管理的逻辑)
+    function createGradient(ctx, c1, c2) {
+        const g = ctx.createLinearGradient(0, 0, 0, 220); g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+    }
+
     async function initDashboard() {
         const container = document.getElementById('data-container');
         const timeDiv = document.getElementById('update-time');
         const statusDot = document.getElementById('status-dot');
 
         try {
+            const resHist = await fetch('./history.json?t=' + new Date().getTime());
+            cachedHistData = await resHist.json();
             const resData = await fetch('./data.json?t=' + new Date().getTime());
             const result = await resData.json();
 
-            // 成功加载：绿灯 + 慕尼黑生成时间
-            timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--up-green); box-shadow:0 0 8px var(--up-green); border-radius:50%;"></span> LAST DATA: ${result.timestamp} (CET)`;
+            statusDot.style.background = '#10b981'; statusDot.classList.remove('pulse');
+            timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--up-green); box-shadow:0 0 8px var(--up-green); border-radius:50%;"></span> LAST SYNC: ${result.timestamp}`;
             
             container.innerHTML = '';
             result.data.forEach(item => {
                 const colorClass = item.change_pct > 0 ? 'positive' : (item.change_pct < 0 ? 'negative' : '');
                 const arrow = item.change_pct > 0 ? '▲' : (item.change_pct < 0 ? '▼' : '■');
-                const sign = item.change_amt > 0 ? '+' : '';
-
-                container.innerHTML += `
-                    <div class="asset-row">
-                        <div class="asset-name" style="width: 40%;">${item.name}</div>
-                        <div style="width: 25%; text-align: right; font-weight: bold;">${item.price.toFixed(2)} €</div>
-                        <div style="width: 35%; text-align: right;" class="${colorClass}">
-                            ${arrow} ${item.change_pct.toFixed(2)}% <span style="font-size: 13px; opacity: 0.8;">(${sign}${item.change_amt.toFixed(2)})</span>
-                        </div>
-                    </div>
-                `;
+                container.innerHTML += `<div class="asset-row"><div class="asset-name" style="width:40%;">${item.name}</div><div style="width:25%; text-align:right; font-weight:bold;">${item.price.toFixed(2)} €</div><div style="width:35%; text-align:right;" class="${colorClass}">${arrow} ${item.change_pct.toFixed(2)}%</div></div>`;
             });
 
-            const resHist = await fetch('./history.json?t=' + new Date().getTime());
-            const histData = await resHist.json();
-            renderCharts(histData);
-
+            renderDashboardCharts(cachedHistData);
         } catch (error) {
-            // 失败：红灯报错
-            timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--down-red); box-shadow:0 0 8px var(--down-red); border-radius:50%;"></span> SYSTEM OFFLINE`;
-            container.innerHTML = `<div class="asset-row negative" style="justify-content:center;">CONNECTION FAILED. WAITING FOR CRON JOB.</div>`;
+            statusDot.style.background = '#ef4444';
+            timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--down-red); box-shadow:0 0 8px var(--down-red); border-radius:50%;"></span> OFFLINE`;
+            container.innerHTML = `<div class="asset-row negative" style="justify-content:center;">CONNECTION FAILED. DATA NOT FOUND.</div>`;
         }
     }
 
-    function createGradient(ctx, colorStart, colorEnd) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 240);
-        gradient.addColorStop(0, colorStart);
-        gradient.addColorStop(1, colorEnd);
-        return gradient;
-    }
-
-    function renderCharts(histData) {
+    // ====== 视图 1: Dashboard Charts ======
+    function renderDashboardCharts(histData) {
+        if(!histData || histData.length === 0) return;
         const labels = histData.map(d => d.date);
-        const vuaaData = histData.map(d => d['VUAA.DE']);
-        const xnasData = histData.map(d => d['XNAS.DE']);
-        const vgweData = histData.map(d => d['VGWE.DE']);
+        const ctxV = document.getElementById('chart-vuaa').getContext('2d'), ctxX = document.getElementById('chart-xnas').getContext('2d'), ctxG = document.getElementById('chart-vgwe').getContext('2d');
+        chartVUAA = new Chart(ctxV, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['VUAA.DE']), borderColor: '#3b82f6', backgroundColor: createGradient(ctxV, 'rgba(59,130,246,0.2)','rgba(59,130,246,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
+        chartXNAS = new Chart(ctxX, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['XNAS.DE']), borderColor: '#10b981', backgroundColor: createGradient(ctxX, 'rgba(16,185,129,0.2)','rgba(16,185,129,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
+        chartVGWE = new Chart(ctxG, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['VGWE.DE']), borderColor: '#f59e0b', backgroundColor: createGradient(ctxG, 'rgba(245,158,11,0.2)','rgba(245,158,11,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
+    }
 
-        if (chartVUAA) chartVUAA.destroy();
-        if (chartXNAS) chartXNAS.destroy();
-        if (chartVGWE) chartVGWE.destroy();
+    // ====== 视图 2: CPPI Engine ======
+    function calculateCPPI() {
+        const currentWealth = parseFloat(document.getElementById('cppi-initial').value) || 0;
+        const floorPct = (parseFloat(document.getElementById('cppi-floor').value) || 0) / 100;
+        const multiplier = parseFloat(document.getElementById('cppi-multiplier').value) || 0;
 
-        const ctxVuaa = document.getElementById('chart-vuaa').getContext('2d');
-        const ctxXnas = document.getElementById('chart-xnas').getContext('2d');
-        const ctxVgwe = document.getElementById('chart-vgwe').getContext('2d');
+        const floorValue = currentWealth * floorPct;
+        let cushion = Math.max(0, currentWealth - floorValue);
+        let targetExposure = Math.min(currentWealth, cushion * multiplier);
+        const riskPct = currentWealth > 0 ? (targetExposure / currentWealth) * 100 : 0;
 
-        chartVUAA = new Chart(ctxVuaa, {
-            type: 'line', data: { labels, datasets: [{ data: vuaaData, borderColor: '#3b82f6', backgroundColor: createGradient(ctxVuaa, 'rgba(59, 130, 246, 0.2)', 'rgba(59, 130, 246, 0)'), borderWidth: 2, fill: true }] }, options: commonChartOptions
-        });
+        let statusHtml = '', fillStyle = '';
+        if (cushion === 0) { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 CRITICAL: ALLOCATE 100% TO CASH</div>`; fillStyle = 'var(--down-red)'; }
+        else if (riskPct < 99) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 DEFENSIVE: REDUCE EQUITY TO ${riskPct.toFixed(1)}%</div>`; fillStyle = 'var(--warning-yellow)'; }
+        else { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SAFE: MAXIMUM EQUITY EXPOSURE</div>`; fillStyle = 'var(--up-green)'; }
 
-        chartXNAS = new Chart(ctxXnas, {
-            type: 'line', data: { labels, datasets: [{ data: xnasData, borderColor: '#10b981', backgroundColor: createGradient(ctxXnas, 'rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0)'), borderWidth: 2, fill: true }] }, options: commonChartOptions
-        });
+        document.getElementById('cppi-results-container').innerHTML = `
+            <div class="res-row"><span class="res-label">Total Value (V)</span><span class="res-val">€ ${currentWealth.toLocaleString()}</span></div>
+            <div class="res-row"><span class="res-label">Protection Floor (F)</span><span class="res-val" style="color:#94a3b8;">€ ${floorValue.toLocaleString()}</span></div>
+            <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label" style="color:var(--accent-blue);">Risk Cushion (C)</span><span class="res-val" style="color:var(--accent-blue);">€ ${cushion.toLocaleString()}</span></div>
+            <div class="cppi-bar-bg"><div class="cppi-bar-fill" style="width: ${riskPct}%; background: ${fillStyle};"></div></div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); font-family:monospace; margin-bottom:15px;"><span>Equities: € ${targetExposure.toLocaleString()} (${riskPct.toFixed(1)}%)</span><span>Cash: € ${(currentWealth - targetExposure).toLocaleString()}</span></div>
+            ${statusHtml}
+        `;
+    }
 
-        chartVGWE = new Chart(ctxVgwe, {
-            type: 'line', data: { labels, datasets: [{ data: vgweData, borderColor: '#f59e0b', backgroundColor: createGradient(ctxVgwe, 'rgba(245, 158, 11, 0.2)', 'rgba(245, 158, 11, 0)'), borderWidth: 2, fill: true }] }, options: commonChartOptions
+    // ====== 视图 3: ALM Engine ======
+    function calculateALM() {
+        if (!cachedHistData || cachedHistData.length === 0) {
+            alert("No historical data available. Please wait for the system to initialize.");
+            return;
+        }
+
+        const initialW = parseFloat(document.getElementById('alm-initial').value) || 10000;
+        const targetW = parseFloat(document.getElementById('alm-target').value) || 1000000;
+        const targetYr = parseInt(document.getElementById('alm-year').value) || 2051;
+        
+        const startYr = 2026;
+        const yearsToGoal = targetYr - startYr;
+        if(yearsToGoal <= 0) return;
+
+        // 计算所需的年化复合增长率
+        const requiredCAGR = Math.pow(targetW / initialW, 1 / yearsToGoal) - 1;
+
+        // 计算今天真实的累计涨幅
+        const firstD = cachedHistData[0];
+        const lastD = cachedHistData[cachedHistData.length - 1];
+        let currentActual = initialW;
+        if (firstD['VUAA.DE'] && lastD['VUAA.DE']) {
+            let ret = ((lastD['VUAA.DE']/firstD['VUAA.DE']) + (lastD['XNAS.DE']/firstD['XNAS.DE']) + (lastD['VGWE.DE']/firstD['VGWE.DE'])) / 3;
+            currentActual = initialW * ret;
+        }
+
+        // 精确推算“今天”应有的目标值 (以天为单位插值计算)
+        const today = new Date();
+        const startOf2026 = new Date(startYr, 0, 1);
+        const daysPassed = (today - startOf2026) / (1000 * 60 * 60 * 24);
+        const yearsPassed = daysPassed / 365.25;
+        const currentTarget = initialW * Math.pow(1 + requiredCAGR, yearsPassed);
+
+        const fundingRatio = (currentActual / currentTarget) * 100;
+
+        // 生成未来投影点坐标
+        const labels = ['Start (2026)', 'Today'];
+        const actualPath = [initialW, currentActual];
+        const liabilityPath = [initialW, currentTarget];
+
+        // 强行向未来画线直到 2051 年
+        const currentYear = today.getFullYear();
+        for(let y = currentYear + 1; y <= targetYr; y++) {
+            labels.push(y.toString());
+            liabilityPath.push(initialW * Math.pow(1 + requiredCAGR, y - startYr));
+            actualPath.push(null); // 未来不可预测，所以绿线停止在 Today
+        }
+
+        // 渲染 UI 结果
+        let statusHtml = '';
+        if (fundingRatio >= 100) {
+            statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: AHEAD OF SCHEDULE</div>`;
+        } else if (fundingRatio >= 90) {
+            statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MONITOR CLOSELY</div>`;
+        } else {
+            statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE CONTRIBUTIONS</div>`;
+        }
+
+        document.getElementById('alm-results-container').innerHTML = `
+            <div class="res-row"><span class="res-label">Required CAGR to Goal</span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
+            <div class="res-row"><span class="res-label">Today's Target L(t)</span><span class="res-val" style="color:var(--alm-purple);">€ ${currentTarget.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row"><span class="res-label">Today's Actual V(t)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label">Funding Ratio (V/L)</span><span class="res-val" style="font-size:24px;">${fundingRatio.toFixed(1)}%</span></div>
+            ${statusHtml}
+        `;
+
+        // 渲染重构后的 ALM 图表
+        renderALMChart(labels, actualPath, liabilityPath);
+    }
+
+    function renderALMChart(labels, actualPath, liabilityPath) {
+        if (chartALM) chartALM.destroy();
+        const ctx = document.getElementById('chart-alm').getContext('2d');
+        
+        chartALM = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Actual Wealth V(t)',
+                        data: actualPath,
+                        borderColor: '#10b981', 
+                        backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'),
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 4, hitRadius: 10
+                    },
+                    {
+                        label: 'Target Liability L(t)',
+                        data: liabilityPath,
+                        borderColor: '#c084fc', 
+                        borderWidth: 2,
+                        borderDash: [5, 5], 
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 4, hitRadius: 10
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } },
+                    tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } }
+                }
+            }
         });
     }
 
-    // 网页加载时，自动执行一次数据抓取
     window.onload = initDashboard;
 </script>
 
