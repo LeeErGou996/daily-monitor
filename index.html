@@ -127,7 +127,6 @@
 
 <div class="sidebar">
     <div class="brand"><span>⚡</span> QUANT ENGINE</div>
-    
     <div class="menu-label">CORE MODULES</div>
     <div class="menu-item active" id="btn-view-dashboard" onclick="switchView('dashboard')"><span>📊</span> <span>Global Market</span></div>
     <div class="menu-item" id="btn-view-cppi" onclick="switchView('cppi')"><span>🛡️</span> <span>CPPI Simulator</span></div>
@@ -176,9 +175,7 @@
                 <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100" oninput="calculateCPPI()"></div>
                 <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1" oninput="calculateCPPI()"></div>
             </div>
-            <div class="result-card" id="cppi-results-container">
-                 <div style="text-align:center; color:#64748b; font-size:14px;" class="pulse">Calculating...</div>
-            </div>
+            <div class="result-card" id="cppi-results-container"></div>
         </div>
     </div>
 
@@ -186,42 +183,27 @@
         <div class="header">
             <h2 style="color: var(--alm-purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);">
                 <span style="background: var(--alm-purple); width: 6px; height: 22px; display: inline-block; border-radius: 3px;"></span>
-                ALM HORIZON
+                ALM HORIZON <span style="font-size:12px; color:var(--accent-blue);">(ADAPTIVE)</span>
             </h2>
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Dynamic Cash Flow Matching</div>
         </div>
         <p style="color: var(--text-sub); font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
-            The engine projects your portfolio growth month-by-month. Balancing your <strong style="color:var(--accent-blue)">Daily DCA</strong> and time horizon is key to a realistic Required CAGR.
+            Short-term market dips may cause a deficit (Yellow). Look at the <strong style="color:var(--accent-blue)">Adaptive CAGR</strong>: it reveals the newly required growth rate from <b>today's actual balance</b> to still reach your target.
         </p>
         
         <div class="grid-2col">
             <div class="input-card">
                 <div style="display: flex; gap: 15px; margin-bottom: 5px;">
-                    <div class="input-group" style="flex:1;">
-                        <label>Start Month</label>
-                        <input type="month" id="alm-start-date" value="2026-01" oninput="calculateALM()">
-                    </div>
-                    <div class="input-group" style="flex:1;">
-                        <label style="color:var(--alm-purple);">Target Month</label>
-                        <input type="month" id="alm-target-date" value="2051-01" style="border-color:rgba(192, 132, 252, 0.4);" oninput="calculateALM()">
-                    </div>
+                    <div class="input-group" style="flex:1;"><label>Start Month</label><input type="month" id="alm-start-date" value="2026-01" oninput="calculateALM()"></div>
+                    <div class="input-group" style="flex:1;"><label style="color:var(--alm-purple);">Target Month</label><input type="month" id="alm-target-date" value="2051-01" style="border-color:rgba(192, 132, 252, 0.4);" oninput="calculateALM()"></div>
                 </div>
 
                 <div style="display: flex; gap: 15px; margin-bottom: 5px;">
-                    <div class="input-group" style="flex:1;">
-                        <label>Initial Capital (€)</label>
-                        <input type="number" id="alm-initial" value="1000" step="1000" oninput="calculateALM()">
-                    </div>
-                    <div class="input-group" style="flex:1;">
-                        <label style="color:var(--accent-blue);">Daily DCA (€)</label>
-                        <input type="number" id="alm-daily" value="20" step="1" style="border-color:var(--accent-blue);" oninput="calculateALM()">
-                    </div>
+                    <div class="input-group" style="flex:1;"><label>Initial Capital (€)</label><input type="number" id="alm-initial" value="1000" step="1000" oninput="calculateALM()"></div>
+                    <div class="input-group" style="flex:1;"><label style="color:var(--accent-blue);">Daily DCA (€)</label><input type="number" id="alm-daily" value="20" step="1" style="border-color:var(--accent-blue);" oninput="calculateALM()"></div>
                 </div>
                 
-                <div class="input-group" style="margin-bottom:0;">
-                    <label>Target Wealth Goal (€)</label>
-                    <input type="number" id="alm-target" value="1000000" step="5000" oninput="calculateALM()">
-                </div>
+                <div class="input-group" style="margin-bottom:0;"><label>Target Wealth Goal (€)</label><input type="number" id="alm-target" value="1000000" step="5000" oninput="calculateALM()"></div>
             </div>
 
             <div class="result-card" id="alm-results-container" style="border-color: rgba(192, 132, 252, 0.3); box-shadow: 0 0 30px rgba(192, 132, 252, 0.1);">
@@ -245,31 +227,19 @@
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
         document.getElementById(`btn-view-${viewName}`).classList.add('active');
-        
         if(viewName === 'cppi') calculateCPPI();
         if(viewName === 'alm') calculateALM();
     }
 
     function updateWeights() {
-        let rawV = parseInt(document.getElementById('w-vuaa').value);
-        let rawX = parseInt(document.getElementById('w-xnas').value);
-        let rawG = parseInt(document.getElementById('w-vgwe').value);
-        
-        let total = rawV + rawX + rawG;
-        if(total === 0) { rawV = 40; rawX = 40; rawG = 20; total = 100; }
-
+        let rawV = parseInt(document.getElementById('w-vuaa').value); let rawX = parseInt(document.getElementById('w-xnas').value); let rawG = parseInt(document.getElementById('w-vgwe').value);
+        let total = rawV + rawX + rawG; if(total === 0) { rawV = 40; rawX = 40; rawG = 20; total = 100; }
         wV = rawV / total; wX = rawX / total; wG = rawG / total;
-
-        document.getElementById('lbl-vuaa').innerText = Math.round(wV * 100) + '%';
-        document.getElementById('lbl-xnas').innerText = Math.round(wX * 100) + '%';
-        document.getElementById('lbl-vgwe').innerText = Math.round(wG * 100) + '%';
+        document.getElementById('lbl-vuaa').innerText = Math.round(wV * 100) + '%'; document.getElementById('lbl-xnas').innerText = Math.round(wX * 100) + '%'; document.getElementById('lbl-vgwe').innerText = Math.round(wG * 100) + '%';
 
         if (cachedHistData && cachedHistData.length > 0) {
-            const firstD = cachedHistData[0];
-            const lastD = cachedHistData[cachedHistData.length - 1];
-            let ret = ( (lastD['VUAA.DE']/firstD['VUAA.DE']) * wV ) + 
-                      ( (lastD['XNAS.DE']/firstD['XNAS.DE']) * wX ) + 
-                      ( (lastD['VGWE.DE']/firstD['VGWE.DE']) * wG );
+            const firstD = cachedHistData[0]; const lastD = cachedHistData[cachedHistData.length - 1];
+            let ret = ( (lastD['VUAA.DE']/firstD['VUAA.DE']) * wV ) + ( (lastD['XNAS.DE']/firstD['XNAS.DE']) * wX ) + ( (lastD['VGWE.DE']/firstD['VGWE.DE']) * wG );
             globalCumulativeReturn = ret - 1;
         }
 
@@ -277,54 +247,38 @@
         if (!document.getElementById('view-alm').classList.contains('hidden-view')) calculateALM();
     }
 
-    Chart.defaults.color = '#64748b';
-    Chart.defaults.font.family = 'monospace';
+    Chart.defaults.color = '#64748b'; Chart.defaults.font.family = 'monospace';
     const commonOptions = {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
         scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right' } },
-        elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } },
-        animation: { duration: 400 } 
+        elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } }, animation: { duration: 400 } 
     };
-
-    function createGradient(ctx, c1, c2) {
-        const g = ctx.createLinearGradient(0, 0, 0, 220); g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
-    }
+    function createGradient(ctx, c1, c2) { const g = ctx.createLinearGradient(0, 0, 0, 220); g.addColorStop(0, c1); g.addColorStop(1, c2); return g; }
 
     async function initDashboard() {
-        const container = document.getElementById('data-container');
-        const timeDiv = document.getElementById('update-time');
-        const statusDot = document.getElementById('status-dot');
-
+        const container = document.getElementById('data-container'); const timeDiv = document.getElementById('update-time'); const statusDot = document.getElementById('status-dot');
         try {
-            const resHist = await fetch('./history.json?t=' + new Date().getTime());
-            cachedHistData = await resHist.json();
-            const resData = await fetch('./data.json?t=' + new Date().getTime());
-            const result = await resData.json();
+            const resHist = await fetch('./history.json?t=' + new Date().getTime()); cachedHistData = await resHist.json();
+            const resData = await fetch('./data.json?t=' + new Date().getTime()); const result = await resData.json();
 
             statusDot.style.background = '#10b981'; statusDot.classList.remove('pulse');
             timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--up-green); box-shadow:0 0 8px var(--up-green); border-radius:50%;"></span> LAST SYNC: ${result.timestamp}`;
-            
             container.innerHTML = '';
             result.data.forEach(item => {
                 const colorClass = item.change_pct > 0 ? 'positive' : (item.change_pct < 0 ? 'negative' : '');
                 const arrow = item.change_pct > 0 ? '▲' : (item.change_pct < 0 ? '▼' : '■');
                 container.innerHTML += `<div class="asset-row"><div class="asset-name" style="width:40%;">${item.name}</div><div style="width:25%; text-align:right; font-weight:bold;">${item.price.toFixed(2)} €</div><div style="width:35%; text-align:right;" class="${colorClass}">${arrow} ${item.change_pct.toFixed(2)}%</div></div>`;
             });
-
-            renderDashboardCharts(cachedHistData);
-            updateWeights();
-
+            renderDashboardCharts(cachedHistData); updateWeights();
         } catch (error) {
-            statusDot.style.background = '#ef4444';
-            timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--down-red); box-shadow:0 0 8px var(--down-red); border-radius:50%;"></span> OFFLINE`;
+            statusDot.style.background = '#ef4444'; timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--down-red); box-shadow:0 0 8px var(--down-red); border-radius:50%;"></span> OFFLINE`;
             container.innerHTML = `<div class="asset-row negative" style="justify-content:center;">CONNECTION FAILED. DATA NOT FOUND.</div>`;
         }
     }
 
     function renderDashboardCharts(histData) {
-        if(!histData || histData.length === 0) return;
-        const labels = histData.map(d => d.date);
+        if(!histData || histData.length === 0) return; const labels = histData.map(d => d.date);
         const ctxV = document.getElementById('chart-vuaa').getContext('2d'), ctxX = document.getElementById('chart-xnas').getContext('2d'), ctxG = document.getElementById('chart-vgwe').getContext('2d');
         chartVUAA = new Chart(ctxV, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['VUAA.DE']), borderColor: '#3b82f6', backgroundColor: createGradient(ctxV, 'rgba(59,130,246,0.2)','rgba(59,130,246,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
         chartXNAS = new Chart(ctxX, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['XNAS.DE']), borderColor: '#10b981', backgroundColor: createGradient(ctxX, 'rgba(16,185,129,0.2)','rgba(16,185,129,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
@@ -357,7 +311,7 @@
         `;
     }
 
-    // ====== 逐月高精度 ALM 推演算法 ======
+    // ====== 终极 V8.3: ALM 引入 Adaptive CAGR ======
     function calculateALM() {
         if (!cachedHistData || cachedHistData.length === 0) return;
 
@@ -367,122 +321,107 @@
         
         const startStr = document.getElementById('alm-start-date').value;
         const targetStr = document.getElementById('alm-target-date').value;
-
         if (!startStr || !targetStr) return;
         
-        // 解析 yyyy-mm 为日期对象 (默认每月的 1 号)
-        const startParts = startStr.split('-');
-        const targetParts = targetStr.split('-');
+        const startParts = startStr.split('-'); const targetParts = targetStr.split('-');
         const startD = new Date(startParts[0], startParts[1] - 1, 1);
         const targetD = new Date(targetParts[0], targetParts[1] - 1, 1);
 
-        // 校验：目标月必须在起始月之后
         if (targetD <= startD) {
             document.getElementById('alm-results-container').innerHTML = `<div style="text-align:center; color:var(--down-red); font-size:14px; padding:20px;">⚠️ Target Month must be strictly after Start Month.</div>`;
             if (chartALM) { chartALM.destroy(); chartALM = null; }
             return;
         }
 
-        // 计算精确的自然天数差异，并折算成交易日 (一年按 252 天算)
         const naturalDaysToGoal = (targetD - startD) / (1000 * 60 * 60 * 24);
         const totalTradingDays = naturalDaysToGoal * (252 / 365.25);
 
-        // 1. 二分法计算加入了“每天定投现金流”后，所需的真实日均复合增长率
-        let low = -0.02; let high = 0.02; let mid = 0;
+        // [核心算法 1]: Base Required CAGR (建仓时的初心理想年化)
+        let low = -0.05; let high = 0.05; let mid = 0;
         for(let i=0; i<100; i++){
-            mid = (low + high) / 2;
-            let fv = 0;
-            if (mid !== 0) {
-                fv = initialW * Math.pow(1 + mid, totalTradingDays) + dailyPMT * (Math.pow(1 + mid, totalTradingDays) - 1) / mid;
-            } else {
-                fv = initialW + dailyPMT * totalTradingDays;
-            }
+            mid = (low + high) / 2; let fv = 0;
+            if (mid !== 0) fv = initialW * Math.pow(1 + mid, totalTradingDays) + dailyPMT * (Math.pow(1 + mid, totalTradingDays) - 1) / mid;
+            else fv = initialW + dailyPMT * totalTradingDays;
             if(fv > targetW) high = mid; else low = mid;
         }
-        
         const reqDailyRate = mid;
         const requiredCAGR = Math.pow(1 + reqDailyRate, 252) - 1;
 
-        // 2. 寻找历史数据的起跑线 (匹配 Start Date)
+        // [核心算法 2]: 计算历史以来的真实市场走势 V(t)
         let startIndex = 0;
-        for(let i=0; i<cachedHistData.length; i++){
-            if(new Date(cachedHistData[i].date) >= startD){
-                startIndex = i; break;
-            }
-        }
+        for(let i=0; i<cachedHistData.length; i++){ if(new Date(cachedHistData[i].date) >= startD){ startIndex = i; break; } }
         
         const firstD = cachedHistData[startIndex];
-        let sharesV = (initialW * wV) / firstD['VUAA.DE'];
-        let sharesX = (initialW * wX) / firstD['XNAS.DE'];
-        let sharesG = (initialW * wG) / firstD['VGWE.DE'];
+        let sharesV = (initialW * wV) / firstD['VUAA.DE']; let sharesX = (initialW * wX) / firstD['XNAS.DE']; let sharesG = (initialW * wG) / firstD['VGWE.DE'];
 
         let currentLiability = initialW;
-        const labels = [];
-        const actualPath = [];
-        const liabilityPath = [];
+        const labels = []; const actualPath = []; const liabilityPath = [];
 
-        // 遍历历史真实走势 (这里的数据依然是每天的，保证 V(t) 的精细度)
         for(let i = startIndex; i < cachedHistData.length; i++) {
             const dayData = cachedHistData[i];
-            
-            // 只保留年月格式的 label (如果遇到该月的第一天)，避免 X 轴太拥挤，但底层依然是每日计算
-            if (i === startIndex || dayData.date.substring(8, 10) === "01" || dayData.date.substring(8, 10) === "02") {
-                labels.push(dayData.date.substring(0, 7)); 
-            } else {
-                labels.push(''); // 空 label，让点存在但不显示文字
-            }
+            if (i === startIndex || dayData.date.substring(8, 10) === "01" || dayData.date.substring(8, 10) === "02") { labels.push(dayData.date.substring(0, 7)); } 
+            else { labels.push(''); }
 
             if (i > startIndex) {
-                sharesV += (dailyPMT * wV) / dayData['VUAA.DE'];
-                sharesX += (dailyPMT * wX) / dayData['XNAS.DE'];
-                sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
+                sharesV += (dailyPMT * wV) / dayData['VUAA.DE']; sharesX += (dailyPMT * wX) / dayData['XNAS.DE']; sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
                 currentLiability = currentLiability * (1 + reqDailyRate) + dailyPMT;
             }
-
             let dailyActual = (sharesV * dayData['VUAA.DE']) + (sharesX * dayData['XNAS.DE']) + (sharesG * dayData['VGWE.DE']);
-            actualPath.push(dailyActual);
-            liabilityPath.push(currentLiability);
+            actualPath.push(dailyActual); liabilityPath.push(currentLiability);
         }
 
         const currentActual = actualPath[actualPath.length - 1] || initialW;
         const currentTarget = liabilityPath[liabilityPath.length - 1] || initialW;
         const fundingRatio = (currentTarget > 0) ? (currentActual / currentTarget) * 100 : 0;
 
-        // 3. 未来折线投影 (改为逐月递进！)
-        const lastHistDate = new Date(cachedHistData[cachedHistData.length - 1].date);
+        // [核心算法 3 (NEW)]: Adaptive Required CAGR (基于当下的自适应修正年化)
+        // 承认亏损，从今天 (currentActual) 重新起步计算到目标日所需的年化
+        const todayD = new Date();
+        let currentRequiredCAGR = requiredCAGR; 
         
-        // 从当前时间的下一个月开始模拟
+        if (todayD < targetD && currentActual > 0) {
+            const daysLeft = (targetD - todayD) / (1000 * 60 * 60 * 24) * (252 / 365.25);
+            if (daysLeft > 0) {
+                let l2 = -0.05; let h2 = 0.05; let m2 = 0;
+                for(let i=0; i<100; i++){
+                    m2 = (l2 + h2) / 2; let fv2 = 0;
+                    if (m2 !== 0) fv2 = currentActual * Math.pow(1 + m2, daysLeft) + dailyPMT * (Math.pow(1 + m2, daysLeft) - 1) / m2;
+                    else fv2 = currentActual + dailyPMT * daysLeft;
+                    if(fv2 > targetW) h2 = m2; else l2 = m2;
+                }
+                currentRequiredCAGR = Math.pow(1 + m2, 252) - 1;
+            }
+        }
+
+        // [核心算法 4]: 未来逐月投影绘图
+        const lastHistDate = new Date(cachedHistData[cachedHistData.length - 1].date);
         let projDate = new Date(lastHistDate.getFullYear(), lastHistDate.getMonth() + 1, 1);
         let projectedLiability = currentLiability;
 
         while (projDate <= targetD) {
-            // 将 yyyy-m-d 格式化为 yyyy-mm
-            let yyyy = projDate.getFullYear();
-            let mm = String(projDate.getMonth() + 1).padStart(2, '0');
-            labels.push(`${yyyy}-${mm}`);
-            
-            // 每个月模拟约 21 个交易日 (252 / 12)
-            for(let d=0; d<21; d++) {
-                projectedLiability = projectedLiability * (1 + reqDailyRate) + dailyPMT;
-            }
-            
+            labels.push(`${projDate.getFullYear()}-${String(projDate.getMonth() + 1).padStart(2, '0')}`);
+            for(let d=0; d<21; d++) projectedLiability = projectedLiability * (1 + reqDailyRate) + dailyPMT;
             liabilityPath.push(projectedLiability);
-            actualPath.push(null); // 未来部分绿线为空
-
-            // 步进到下一个月
+            actualPath.push(null);
             projDate.setMonth(projDate.getMonth() + 1);
         }
 
-        // 4. UI 渲染更新
+        // UI 渲染 (加入新指标)
         let statusHtml = '';
-        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: ON TRACK TO REACH GOAL</div>`; }
-        else if (fundingRatio >= 95) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MAINTAIN DCA DISCIPLINE</div>`; }
-        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: CONSIDER INCREASING DEPOSIT</div>`; }
+        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: V(t) BEATING L(t)</div>`; }
+        else if (fundingRatio >= 95) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 NORMAL DEFICIT: ADAPTIVE CAGR STILL VIABLE</div>`; }
+        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 HIGH DEFICIT: ADAPTIVE CAGR TOO STEEP</div>`; }
+
+        // 当自适应年化高于原始年化时显示红色警告，低于时显示绿色安心
+        const adaptiveColor = currentRequiredCAGR > requiredCAGR ? 'var(--warning-yellow)' : 'var(--up-green)';
 
         document.getElementById('alm-results-container').innerHTML = `
-            <div class="res-row"><span class="res-label">Required CAGR <span style="font-size:10px;color:var(--accent-blue);">(with DCA)</span></span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
-            <div class="res-row"><span class="res-label">Today's Target L(t)</span><span class="res-val" style="color:var(--alm-purple);">€ ${currentTarget.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
-            <div class="res-row"><span class="res-label">Actual V(t) (DCA + Market)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row"><span class="res-label">Baseline CAGR <span style="font-size:10px;color:var(--text-sub);">(Original Plan)</span></span><span class="res-val" style="color:var(--text-sub);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
+            <div class="res-row" style="margin-bottom:15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;"><span class="res-label" style="color:var(--accent-blue);">Adaptive CAGR <span style="font-size:10px;">(From Today's V)</span></span><span class="res-val" style="color:${adaptiveColor}; font-size:20px;">${(currentRequiredCAGR * 100).toFixed(2)}%</span></div>
+            
+            <div class="res-row" style="font-size:14px;"><span class="res-label">Target L(t)</span><span class="res-val" style="color:var(--alm-purple);">€ ${currentTarget.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row" style="font-size:14px;"><span class="res-label">Actual V(t)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            
             <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label">Funding Ratio (V/L)</span><span class="res-val" style="font-size:24px;">${fundingRatio.toFixed(1)}%</span></div>
             ${statusHtml}
         `;
@@ -508,14 +447,7 @@
                 animation: { duration: 0 }, 
                 plugins: { legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
                 scales: { 
-                    x: { 
-                        grid: { display: false }, 
-                        ticks: { 
-                            color: '#64748b',
-                            maxTicksLimit: 12, // 限制 X 轴显示的标签数量，避免拥挤
-                            maxRotation: 0 
-                        } 
-                    }, 
+                    x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 12, maxRotation: 0 } }, 
                     y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } } 
                 }
             }
