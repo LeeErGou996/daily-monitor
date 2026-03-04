@@ -37,7 +37,8 @@
         .sidebar {
             width: 280px; min-width: 280px; background: var(--sidebar-bg); backdrop-filter: blur(20px);
             border-right: 1px solid rgba(255, 255, 255, 0.05); display: flex; flex-direction: column;
-            padding: 30px 0; box-shadow: 5px 0 20px rgba(0,0,0,0.5); z-index: 10;
+            padding: 30px 0 0 0; box-shadow: 5px 0 20px rgba(0,0,0,0.5); z-index: 10;
+            overflow-y: auto;
         }
 
         .brand {
@@ -54,6 +55,22 @@
         }
         .menu-item:hover { background: rgba(56, 189, 248, 0.05); color: var(--text-main); }
         .menu-item.active { border-left-color: var(--accent-blue); background: rgba(56, 189, 248, 0.1); color: #fff; }
+
+        /* 滑块样式 */
+        .weight-panel { padding: 0 25px 20px 25px; }
+        .weight-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-family: monospace; }
+        .weight-val { color: var(--accent-blue); font-weight: bold; }
+        input[type=range] { 
+            width: 100%; margin-bottom: 18px; accent-color: var(--accent-blue); 
+            background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; 
+            outline: none; -webkit-appearance: none; 
+        }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; 
+            background: var(--accent-blue); cursor: pointer; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
 
         /* ================== 主内容区 (Main Content) ================== */
         .main-content {
@@ -99,20 +116,8 @@
 
         /* CPPI & ALM Specific */
         .cppi-bar-bg { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 20px; margin-bottom: 15px; overflow: hidden; }
-        .cppi-bar-fill { height: 100%; background: var(--accent-blue); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        
+        .cppi-bar-fill { height: 100%; background: var(--accent-blue); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; }
         .alm-chart-container { width: 100%; height: 280px; margin-top: 30px; background: rgba(0,0,0,0.15); border-radius: 16px; padding: 20px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.02); }
-
-        /* 执行动作按钮 (NEW) */
-        .action-btn {
-            width: 100%; margin-top: 15px; background: rgba(192, 132, 252, 0.1); 
-            color: var(--alm-purple); border: 1px solid var(--alm-purple); 
-            padding: 14px; border-radius: 8px; font-family: monospace; font-size: 15px; font-weight: bold; 
-            cursor: pointer; transition: all 0.3s; letter-spacing: 1px;
-        }
-        .action-btn:hover {
-            background: var(--alm-purple); color: #fff; box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);
-        }
 
         .pulse { animation: pulse-animation 2s infinite; }
         @keyframes pulse-animation { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
@@ -122,10 +127,27 @@
 
 <div class="sidebar">
     <div class="brand"><span>⚡</span> QUANT ENGINE</div>
+    
     <div class="menu-label">CORE MODULES</div>
     <div class="menu-item active" id="btn-view-dashboard" onclick="switchView('dashboard')"><span>📊</span> <span>Global Market</span></div>
     <div class="menu-item" id="btn-view-cppi" onclick="switchView('cppi')"><span>🛡️</span> <span>CPPI Simulator</span></div>
     <div class="menu-item" id="btn-view-alm" onclick="switchView('alm')"><span>🧭</span> <span>ALM Horizon</span></div>
+
+    <div class="menu-label" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">PORTFOLIO ALLOCATION</div>
+    <div class="weight-panel">
+        <div class="weight-row"><span>S&P 500 (VUAA)</span><span class="weight-val" id="lbl-vuaa">34%</span></div>
+        <input type="range" id="w-vuaa" min="0" max="100" value="34" oninput="updateWeights()">
+        
+        <div class="weight-row"><span>NASDAQ 100 (XNAS)</span><span class="weight-val" id="lbl-xnas" style="color:#10b981;">33%</span></div>
+        <input type="range" id="w-xnas" min="0" max="100" value="33" oninput="updateWeights()">
+        
+        <div class="weight-row"><span>HIGH DIV (VGWE)</span><span class="weight-val" id="lbl-vgwe" style="color:#f59e0b;">33%</span></div>
+        <input type="range" id="w-vgwe" min="0" max="100" value="33" oninput="updateWeights()">
+        
+        <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 5px; line-height: 1.4;">
+            Sliders auto-normalize to 100%.<br>Real-time projection enabled.
+        </div>
+    </div>
 </div>
 
 <div class="main-content">
@@ -148,15 +170,17 @@
             <h2>CPPI RISK SIMULATOR</h2>
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">TUM Quant Algorithm</div>
         </div>
+        <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+            Adjust portfolio weights or parameters below to see instant changes in your safety cushion.
+        </p>
         <div class="grid-2col">
             <div class="input-card">
-                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="10000"></div>
-                <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100"></div>
-                <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1"></div>
-                <button class="action-btn" style="color:var(--accent-blue); border-color:var(--accent-blue); background:rgba(56,189,248,0.1);" onclick="calculateCPPI()">🔄 RUN SIMULATION</button>
+                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="10000" oninput="calculateCPPI()"></div>
+                <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100" oninput="calculateCPPI()"></div>
+                <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1" oninput="calculateCPPI()"></div>
             </div>
             <div class="result-card" id="cppi-results-container">
-                 <div style="text-align:center; color:#64748b; font-size:14px;" class="pulse">Awaiting manual execution...</div>
+                 <div style="text-align:center; color:#64748b; font-size:14px;" class="pulse">Calculating...</div>
             </div>
         </div>
     </div>
@@ -170,38 +194,20 @@
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Liability Matching</div>
         </div>
         <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-            Asset Liability Management tracks your Actual Wealth <strong style="color:var(--up-green)">V(t)</strong> against your Required Target Glidepath <strong style="color:var(--alm-purple)">L(t)</strong>.
+            Your custom portfolio weights will dictate the actual trajectory of the <strong style="color:var(--up-green)">V(t)</strong> line against the target <strong style="color:var(--alm-purple)">L(t)</strong>.
         </p>
         
         <div class="grid-2col">
             <div class="input-card">
-                <div class="input-group">
-                    <label>Initial Investment 2026 (€)</label>
-                    <input type="number" id="alm-initial" value="10000" step="1000">
-                    <div class="input-desc">Starting Capital at Inception.</div>
-                </div>
-                <div class="input-group">
-                    <label>Target Wealth Goal (€)</label>
-                    <input type="number" id="alm-target" value="1000000" step="50000">
-                    <div class="input-desc">The ultimate liability to cover (e.g., €1 Million).</div>
-                </div>
-                <div class="input-group">
-                    <label>Target Year</label>
-                    <input type="number" id="alm-year" value="2051" step="1">
-                    <div class="input-desc">Year of Financial Independence.</div>
-                </div>
-                
-                <button class="action-btn" onclick="calculateALM()">🚀 GENERATE ALM PROJECTION</button>
+                <div class="input-group"><label>Initial Investment 2026 (€)</label><input type="number" id="alm-initial" value="10000" step="1000" oninput="calculateALM()"></div>
+                <div class="input-group"><label>Target Wealth Goal (€)</label><input type="number" id="alm-target" value="1000000" step="50000" oninput="calculateALM()"></div>
+                <div class="input-group"><label>Target Year</label><input type="number" id="alm-year" value="2051" step="1" oninput="calculateALM()"></div>
             </div>
-
             <div class="result-card" id="alm-results-container" style="border-color: rgba(192, 132, 252, 0.3); box-shadow: 0 0 30px rgba(192, 132, 252, 0.1);">
-                <div style="text-align:center; color:#c084fc; font-size:14px; opacity:0.6;" class="pulse">Click button to generate path...</div>
+                <div style="text-align:center; color:#c084fc; font-size:14px;" class="pulse">Calculating projection...</div>
             </div>
         </div>
-
-        <div class="alm-chart-container">
-            <canvas id="chart-alm"></canvas>
-        </div>
+        <div class="alm-chart-container"><canvas id="chart-alm"></canvas></div>
     </div>
 
 </div>
@@ -209,6 +215,10 @@
 <script>
     let chartVUAA = null, chartXNAS = null, chartVGWE = null, chartALM = null;
     let cachedHistData = []; 
+    let globalCumulativeReturn = 0;
+
+    // 全局资产真实占比
+    let wV = 0.34, wX = 0.33, wG = 0.33;
 
     // ====== 路由视图切换 ======
     function switchView(viewName) {
@@ -217,17 +227,55 @@
         document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
         document.getElementById(`btn-view-${viewName}`).classList.add('active');
         
-        // 切换时不自动计算，让用户手动点击按钮
+        // 切换视图时，自动渲染当前视图的最新状态
+        if(viewName === 'cppi') calculateCPPI();
+        if(viewName === 'alm') calculateALM();
     }
 
-    // ====== 数据抓取与图表基础 ======
+    // ====== 资产配比动态更新器 (全响应核心) ======
+    function updateWeights() {
+        // 读取滑块原始值
+        let rawV = parseInt(document.getElementById('w-vuaa').value);
+        let rawX = parseInt(document.getElementById('w-xnas').value);
+        let rawG = parseInt(document.getElementById('w-vgwe').value);
+        
+        let total = rawV + rawX + rawG;
+        if(total === 0) { rawV = 34; rawX = 33; rawG = 33; total = 100; }
+
+        // 自动归一化
+        wV = rawV / total;
+        wX = rawX / total;
+        wG = rawG / total;
+
+        // 更新 UI 标签
+        document.getElementById('lbl-vuaa').innerText = Math.round(wV * 100) + '%';
+        document.getElementById('lbl-xnas').innerText = Math.round(wX * 100) + '%';
+        document.getElementById('lbl-vgwe').innerText = Math.round(wG * 100) + '%';
+
+        // 重新计算组合基准收益率
+        if (cachedHistData && cachedHistData.length > 0) {
+            const firstD = cachedHistData[0];
+            const lastD = cachedHistData[cachedHistData.length - 1];
+            let ret = ( (lastD['VUAA.DE']/firstD['VUAA.DE']) * wV ) + 
+                      ( (lastD['XNAS.DE']/firstD['XNAS.DE']) * wX ) + 
+                      ( (lastD['VGWE.DE']/firstD['VGWE.DE']) * wG );
+            globalCumulativeReturn = ret - 1;
+        }
+
+        // 无论哪个视图开启，强制实时重算对应模块
+        if (!document.getElementById('view-cppi').classList.contains('hidden-view')) calculateCPPI(); 
+        if (!document.getElementById('view-alm').classList.contains('hidden-view')) calculateALM();
+    }
+
+    // ====== 图表配置 ======
     Chart.defaults.color = '#64748b';
     Chart.defaults.font.family = 'monospace';
     const commonOptions = {
         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
         scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right' } },
-        elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } }
+        elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } },
+        animation: { duration: 400 } // 让实时拖动时的图表动画更流畅
     };
 
     function createGradient(ctx, c1, c2) {
@@ -256,6 +304,10 @@
             });
 
             renderDashboardCharts(cachedHistData);
+            
+            // 初始化完毕后，调用一次配比更新，激活所有底层计算
+            updateWeights();
+
         } catch (error) {
             statusDot.style.background = '#ef4444';
             timeDiv.innerHTML = `<span style="display:inline-block; width:8px; height:8px; background:var(--down-red); box-shadow:0 0 8px var(--down-red); border-radius:50%;"></span> OFFLINE`;
@@ -263,7 +315,6 @@
         }
     }
 
-    // ====== 视图 1: Dashboard Charts ======
     function renderDashboardCharts(histData) {
         if(!histData || histData.length === 0) return;
         const labels = histData.map(d => d.date);
@@ -273,16 +324,17 @@
         chartVGWE = new Chart(ctxG, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['VGWE.DE']), borderColor: '#f59e0b', backgroundColor: createGradient(ctxG, 'rgba(245,158,11,0.2)','rgba(245,158,11,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
     }
 
-    // ====== 视图 2: CPPI Engine ======
+    // ====== 视图 2: CPPI Engine (Fully Reactive) ======
     function calculateCPPI() {
         const currentWealth = parseFloat(document.getElementById('cppi-initial').value) || 0;
         const floorPct = (parseFloat(document.getElementById('cppi-floor').value) || 0) / 100;
         const multiplier = parseFloat(document.getElementById('cppi-multiplier').value) || 0;
 
+        const dynamicWealth = currentWealth * (1 + globalCumulativeReturn);
         const floorValue = currentWealth * floorPct;
-        let cushion = Math.max(0, currentWealth - floorValue);
-        let targetExposure = Math.min(currentWealth, cushion * multiplier);
-        const riskPct = currentWealth > 0 ? (targetExposure / currentWealth) * 100 : 0;
+        let cushion = Math.max(0, dynamicWealth - floorValue);
+        let targetExposure = Math.min(dynamicWealth, cushion * multiplier);
+        const riskPct = dynamicWealth > 0 ? (targetExposure / dynamicWealth) * 100 : 0;
 
         let statusHtml = '', fillStyle = '';
         if (cushion === 0) { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 CRITICAL: ALLOCATE 100% TO CASH</div>`; fillStyle = 'var(--down-red)'; }
@@ -290,21 +342,18 @@
         else { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SAFE: MAXIMUM EQUITY EXPOSURE</div>`; fillStyle = 'var(--up-green)'; }
 
         document.getElementById('cppi-results-container').innerHTML = `
-            <div class="res-row"><span class="res-label">Total Value (V)</span><span class="res-val">€ ${currentWealth.toLocaleString()}</span></div>
+            <div class="res-row"><span class="res-label">Dynamic Value (V)</span><span class="res-val">€ ${dynamicWealth.toLocaleString(undefined, {maximumFractionDigits:2})}</span></div>
             <div class="res-row"><span class="res-label">Protection Floor (F)</span><span class="res-val" style="color:#94a3b8;">€ ${floorValue.toLocaleString()}</span></div>
-            <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label" style="color:var(--accent-blue);">Risk Cushion (C)</span><span class="res-val" style="color:var(--accent-blue);">€ ${cushion.toLocaleString()}</span></div>
+            <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label" style="color:var(--accent-blue);">Risk Cushion (C)</span><span class="res-val" style="color:var(--accent-blue);">€ ${cushion.toLocaleString(undefined, {maximumFractionDigits:2})}</span></div>
             <div class="cppi-bar-bg"><div class="cppi-bar-fill" style="width: ${riskPct}%; background: ${fillStyle};"></div></div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); font-family:monospace; margin-bottom:15px;"><span>Equities: € ${targetExposure.toLocaleString()} (${riskPct.toFixed(1)}%)</span><span>Cash: € ${(currentWealth - targetExposure).toLocaleString()}</span></div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-sub); font-family:monospace; margin-bottom:15px;"><span>Equities: € ${targetExposure.toLocaleString(undefined, {maximumFractionDigits:0})} (${riskPct.toFixed(1)}%)</span><span>Cash: € ${(dynamicWealth - targetExposure).toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
             ${statusHtml}
         `;
     }
 
-    // ====== 视图 3: ALM Engine ======
+    // ====== 视图 3: ALM Engine (Fully Reactive) ======
     function calculateALM() {
-        if (!cachedHistData || cachedHistData.length === 0) {
-            alert("No historical data available. Please wait for the system to initialize.");
-            return;
-        }
+        if (!cachedHistData || cachedHistData.length === 0) return;
 
         const initialW = parseFloat(document.getElementById('alm-initial').value) || 10000;
         const targetW = parseFloat(document.getElementById('alm-target').value) || 1000000;
@@ -314,59 +363,52 @@
         const yearsToGoal = targetYr - startYr;
         if(yearsToGoal <= 0) return;
 
-        // 计算所需的年化复合增长率
         const requiredCAGR = Math.pow(targetW / initialW, 1 / yearsToGoal) - 1;
+        const dailyReqRate = Math.pow(1 + requiredCAGR, 1 / 252) - 1;
 
-        // 计算今天真实的累计涨幅
+        const labels = [];
+        const actualPath = [];
+        const liabilityPath = [];
+        let currentLiability = initialW;
+        
         const firstD = cachedHistData[0];
-        const lastD = cachedHistData[cachedHistData.length - 1];
-        let currentActual = initialW;
-        if (firstD['VUAA.DE'] && lastD['VUAA.DE']) {
-            let ret = ((lastD['VUAA.DE']/firstD['VUAA.DE']) + (lastD['XNAS.DE']/firstD['XNAS.DE']) + (lastD['VGWE.DE']/firstD['VGWE.DE'])) / 3;
-            currentActual = initialW * ret;
-        }
 
-        // 精确推算“今天”应有的目标值 (以天为单位插值计算)
-        const today = new Date();
-        const startOf2026 = new Date(startYr, 0, 1);
-        const daysPassed = (today - startOf2026) / (1000 * 60 * 60 * 24);
-        const yearsPassed = daysPassed / 365.25;
-        const currentTarget = initialW * Math.pow(1 + requiredCAGR, yearsPassed);
+        cachedHistData.forEach((dayData) => {
+            labels.push(dayData.date);
+            let ret = ( (dayData['VUAA.DE']/firstD['VUAA.DE']) * wV ) + 
+                      ( (dayData['XNAS.DE']/firstD['XNAS.DE']) * wX ) + 
+                      ( (dayData['VGWE.DE']/firstD['VGWE.DE']) * wG );
+            
+            actualPath.push(initialW * ret);
+            currentLiability = currentLiability * (1 + dailyReqRate);
+            liabilityPath.push(currentLiability);
+        });
 
+        const currentActual = actualPath[actualPath.length - 1];
+        const currentTarget = liabilityPath[liabilityPath.length - 1];
         const fundingRatio = (currentActual / currentTarget) * 100;
 
-        // 生成未来投影点坐标
-        const labels = ['Start (2026)', 'Today'];
-        const actualPath = [initialW, currentActual];
-        const liabilityPath = [initialW, currentTarget];
-
-        // 强行向未来画线直到 2051 年
+        const today = new Date();
         const currentYear = today.getFullYear();
         for(let y = currentYear + 1; y <= targetYr; y++) {
             labels.push(y.toString());
             liabilityPath.push(initialW * Math.pow(1 + requiredCAGR, y - startYr));
-            actualPath.push(null); // 未来不可预测，所以绿线停止在 Today
+            actualPath.push(null); 
         }
 
-        // 渲染 UI 结果
         let statusHtml = '';
-        if (fundingRatio >= 100) {
-            statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: AHEAD OF SCHEDULE</div>`;
-        } else if (fundingRatio >= 90) {
-            statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MONITOR CLOSELY</div>`;
-        } else {
-            statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE CONTRIBUTIONS</div>`;
-        }
+        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: AHEAD OF SCHEDULE</div>`; }
+        else if (fundingRatio >= 90) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MONITOR CLOSELY</div>`; }
+        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE CONTRIBUTIONS</div>`; }
 
         document.getElementById('alm-results-container').innerHTML = `
-            <div class="res-row"><span class="res-label">Required CAGR to Goal</span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
+            <div class="res-row"><span class="res-label">Required CAGR</span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
             <div class="res-row"><span class="res-label">Today's Target L(t)</span><span class="res-val" style="color:var(--alm-purple);">€ ${currentTarget.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
-            <div class="res-row"><span class="res-label">Today's Actual V(t)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row"><span class="res-label">Actual V(t) (Weighted)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
             <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label">Funding Ratio (V/L)</span><span class="res-val" style="font-size:24px;">${fundingRatio.toFixed(1)}%</span></div>
             ${statusHtml}
         `;
 
-        // 渲染重构后的 ALM 图表
         renderALMChart(labels, actualPath, liabilityPath);
     }
 
@@ -379,39 +421,15 @@
             data: {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Actual Wealth V(t)',
-                        data: actualPath,
-                        borderColor: '#10b981', 
-                        backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'),
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.1,
-                        pointRadius: 4, hitRadius: 10
-                    },
-                    {
-                        label: 'Target Liability L(t)',
-                        data: liabilityPath,
-                        borderColor: '#c084fc', 
-                        borderWidth: 2,
-                        borderDash: [5, 5], 
-                        fill: false,
-                        tension: 0.1,
-                        pointRadius: 4, hitRadius: 10
-                    }
+                    { label: 'Weighted Actual V(t)', data: actualPath, borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'), borderWidth: 2, fill: true, tension: 0.1, pointRadius: 2, hitRadius: 10 },
+                    { label: 'Target Liability L(t)', data: liabilityPath, borderColor: '#c084fc', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2, hitRadius: 10 }
                 ]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } },
-                    tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 }
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#64748b' } },
-                    y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } }
-                }
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                animation: { duration: 0 }, // ALM 拖动重绘过于频繁，关闭动画避免卡顿
+                plugins: { legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
+                scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } } }
             }
         });
     }
