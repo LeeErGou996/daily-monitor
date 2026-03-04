@@ -79,7 +79,7 @@
         
         .dashboard-container {
             background: var(--panel-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border-radius: 20px; padding: 35px; width: 100%; max-width: 850px;
+            border-radius: 20px; padding: 35px; width: 100%; max-width: 900px;
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 0 1px var(--border-glow); transition: opacity 0.3s ease;
         }
 
@@ -93,17 +93,16 @@
         /* ====== Shared UI Components ====== */
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
         .input-card { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; font-size: 13px; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 1px; }
-        .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 15px; border-radius: 8px; font-family: monospace; font-size: 16px; outline: none; transition: border 0.3s; box-sizing: border-box; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+        .input-group input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; border-radius: 6px; font-family: monospace; font-size: 15px; outline: none; transition: border 0.3s; box-sizing: border-box; }
         .input-group input:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
-        .input-desc { font-size: 11px; color: #64748b; margin-top: 5px; line-height: 1.4; }
         
         .result-card { background: rgba(15, 23, 42, 0.8); border-radius: 16px; padding: 25px; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 0 30px rgba(56, 189, 248, 0.1); display: flex; flex-direction: column; justify-content: center; }
-        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-family: monospace; font-size: 16px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .res-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-family: monospace; font-size: 15px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 8px; }
         .res-label { color: var(--text-sub); }
-        .res-val { font-weight: bold; font-size: 18px; }
-        .status-badge { text-align: center; padding: 15px; border-radius: 8px; font-size: 14px; font-weight: bold; margin-top: 20px; letter-spacing: 1px; transition: all 0.3s; }
+        .res-val { font-weight: bold; font-size: 16px; }
+        .status-badge { text-align: center; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: bold; margin-top: 15px; letter-spacing: 1px; transition: all 0.3s; }
 
         /* Dashboard Specific */
         .asset-row { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; background: rgba(0, 0, 0, 0.2); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.03); transition: transform 0.2s; font-family: monospace; font-size: 16px; margin-bottom: 12px;}
@@ -135,17 +134,17 @@
 
     <div class="menu-label" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">PORTFOLIO ALLOCATION</div>
     <div class="weight-panel">
-        <div class="weight-row"><span>S&P 500 (VUAA)</span><span class="weight-val" id="lbl-vuaa">34%</span></div>
-        <input type="range" id="w-vuaa" min="0" max="100" value="34" oninput="updateWeights()">
+        <div class="weight-row"><span>S&P 500 (VUAA)</span><span class="weight-val" id="lbl-vuaa">40%</span></div>
+        <input type="range" id="w-vuaa" min="0" max="100" value="40" oninput="updateWeights()">
         
-        <div class="weight-row"><span>NASDAQ 100 (XNAS)</span><span class="weight-val" id="lbl-xnas" style="color:#10b981;">33%</span></div>
-        <input type="range" id="w-xnas" min="0" max="100" value="33" oninput="updateWeights()">
+        <div class="weight-row"><span>NASDAQ 100 (XNAS)</span><span class="weight-val" id="lbl-xnas" style="color:#10b981;">40%</span></div>
+        <input type="range" id="w-xnas" min="0" max="100" value="40" oninput="updateWeights()">
         
-        <div class="weight-row"><span>HIGH DIV (VGWE)</span><span class="weight-val" id="lbl-vgwe" style="color:#f59e0b;">33%</span></div>
-        <input type="range" id="w-vgwe" min="0" max="100" value="33" oninput="updateWeights()">
+        <div class="weight-row"><span>HIGH DIV (VGWE)</span><span class="weight-val" id="lbl-vgwe" style="color:#f59e0b;">20%</span></div>
+        <input type="range" id="w-vgwe" min="0" max="100" value="20" oninput="updateWeights()">
         
         <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 5px; line-height: 1.4;">
-            Sliders auto-normalize to 100%.<br>Real-time projection enabled.
+            4-4-2 Default Strategy.<br>Real-time projection enabled.
         </div>
     </div>
 </div>
@@ -170,12 +169,9 @@
             <h2>CPPI RISK SIMULATOR</h2>
             <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">TUM Quant Algorithm</div>
         </div>
-        <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
-            Adjust portfolio weights or parameters below to see instant changes in your safety cushion.
-        </p>
         <div class="grid-2col">
             <div class="input-card">
-                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="10000" oninput="calculateCPPI()"></div>
+                <div class="input-group"><label>Current Portfolio Value (€)</label><input type="number" id="cppi-initial" value="1000" oninput="calculateCPPI()"></div>
                 <div class="input-group"><label>Floor Protection Level (%)</label><input type="number" id="cppi-floor" value="85" min="1" max="100" oninput="calculateCPPI()"></div>
                 <div class="input-group"><label>Risk Multiplier (m)</label><input type="number" id="cppi-multiplier" value="4.0" step="0.1" oninput="calculateCPPI()"></div>
             </div>
@@ -189,17 +185,20 @@
         <div class="header">
             <h2 style="color: var(--alm-purple); text-shadow: 0 0 20px rgba(192, 132, 252, 0.5);">
                 <span style="background: var(--alm-purple); width: 6px; height: 22px; display: inline-block; border-radius: 3px;"></span>
-                ALM HORIZON
+                ALM HORIZON (DCA ACTIVE)
             </h2>
-            <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Liability Matching</div>
+            <div style="font-size: 13px; color: var(--text-sub); font-family: monospace;">Dynamic Cash Flow Matching</div>
         </div>
         <p style="color: var(--text-sub); font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
-            Your custom portfolio weights will dictate the actual trajectory of the <strong style="color:var(--up-green)">V(t)</strong> line against the target <strong style="color:var(--alm-purple)">L(t)</strong>.
+            The engine now accounts for your continuous <strong style="color:var(--accent-blue)">Daily Contributions</strong>. Watch the required CAGR drop dramatically as your saving habits power the portfolio.
         </p>
         
         <div class="grid-2col">
             <div class="input-card">
-                <div class="input-group"><label>Initial Investment 2026 (€)</label><input type="number" id="alm-initial" value="10000" step="1000" oninput="calculateALM()"></div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="input-group" style="flex:1;"><label>Initial Capital (€)</label><input type="number" id="alm-initial" value="1000" step="1000" oninput="calculateALM()"></div>
+                    <div class="input-group" style="flex:1;"><label style="color:var(--accent-blue);">Daily DCA (€)</label><input type="number" id="alm-daily" value="20" step="5" style="border-color:var(--accent-blue);" oninput="calculateALM()"></div>
+                </div>
                 <div class="input-group"><label>Target Wealth Goal (€)</label><input type="number" id="alm-target" value="1000000" step="50000" oninput="calculateALM()"></div>
                 <div class="input-group"><label>Target Year</label><input type="number" id="alm-year" value="2051" step="1" oninput="calculateALM()"></div>
             </div>
@@ -217,8 +216,8 @@
     let cachedHistData = []; 
     let globalCumulativeReturn = 0;
 
-    // 全局资产真实占比
-    let wV = 0.34, wX = 0.33, wG = 0.33;
+    // 全局资产真实占比 (默认为 4:4:2)
+    let wV = 0.40, wX = 0.40, wG = 0.20;
 
     // ====== 路由视图切换 ======
     function switchView(viewName) {
@@ -227,32 +226,25 @@
         document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
         document.getElementById(`btn-view-${viewName}`).classList.add('active');
         
-        // 切换视图时，自动渲染当前视图的最新状态
         if(viewName === 'cppi') calculateCPPI();
         if(viewName === 'alm') calculateALM();
     }
 
-    // ====== 资产配比动态更新器 (全响应核心) ======
+    // ====== 资产配比动态更新器 ======
     function updateWeights() {
-        // 读取滑块原始值
         let rawV = parseInt(document.getElementById('w-vuaa').value);
         let rawX = parseInt(document.getElementById('w-xnas').value);
         let rawG = parseInt(document.getElementById('w-vgwe').value);
         
         let total = rawV + rawX + rawG;
-        if(total === 0) { rawV = 34; rawX = 33; rawG = 33; total = 100; }
+        if(total === 0) { rawV = 40; rawX = 40; rawG = 20; total = 100; }
 
-        // 自动归一化
-        wV = rawV / total;
-        wX = rawX / total;
-        wG = rawG / total;
+        wV = rawV / total; wX = rawX / total; wG = rawG / total;
 
-        // 更新 UI 标签
         document.getElementById('lbl-vuaa').innerText = Math.round(wV * 100) + '%';
         document.getElementById('lbl-xnas').innerText = Math.round(wX * 100) + '%';
         document.getElementById('lbl-vgwe').innerText = Math.round(wG * 100) + '%';
 
-        // 重新计算组合基准收益率
         if (cachedHistData && cachedHistData.length > 0) {
             const firstD = cachedHistData[0];
             const lastD = cachedHistData[cachedHistData.length - 1];
@@ -262,7 +254,6 @@
             globalCumulativeReturn = ret - 1;
         }
 
-        // 无论哪个视图开启，强制实时重算对应模块
         if (!document.getElementById('view-cppi').classList.contains('hidden-view')) calculateCPPI(); 
         if (!document.getElementById('view-alm').classList.contains('hidden-view')) calculateALM();
     }
@@ -275,7 +266,7 @@
         plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
         scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right' } },
         elements: { line: { tension: 0.4 }, point: { radius: 0, hitRadius: 10, hoverRadius: 4 } },
-        animation: { duration: 400 } // 让实时拖动时的图表动画更流畅
+        animation: { duration: 400 } 
     };
 
     function createGradient(ctx, c1, c2) {
@@ -304,8 +295,6 @@
             });
 
             renderDashboardCharts(cachedHistData);
-            
-            // 初始化完毕后，调用一次配比更新，激活所有底层计算
             updateWeights();
 
         } catch (error) {
@@ -324,7 +313,6 @@
         chartVGWE = new Chart(ctxG, { type: 'line', data: { labels, datasets: [{ data: histData.map(d=>d['VGWE.DE']), borderColor: '#f59e0b', backgroundColor: createGradient(ctxG, 'rgba(245,158,11,0.2)','rgba(245,158,11,0)'), borderWidth: 2, fill: true }] }, options: commonOptions });
     }
 
-    // ====== 视图 2: CPPI Engine (Fully Reactive) ======
     function calculateCPPI() {
         const currentWealth = parseFloat(document.getElementById('cppi-initial').value) || 0;
         const floorPct = (parseFloat(document.getElementById('cppi-floor').value) || 0) / 100;
@@ -351,60 +339,100 @@
         `;
     }
 
-    // ====== 视图 3: ALM Engine (Fully Reactive) ======
+    // ====== 视图 3: ALM Engine (引入二分法推算定投所需的年化) ======
     function calculateALM() {
         if (!cachedHistData || cachedHistData.length === 0) return;
 
-        const initialW = parseFloat(document.getElementById('alm-initial').value) || 10000;
+        const initialW = parseFloat(document.getElementById('alm-initial').value) || 0;
+        const dailyPMT = parseFloat(document.getElementById('alm-daily').value) || 0;
         const targetW = parseFloat(document.getElementById('alm-target').value) || 1000000;
         const targetYr = parseInt(document.getElementById('alm-year').value) || 2051;
         
         const startYr = 2026;
         const yearsToGoal = targetYr - startYr;
         if(yearsToGoal <= 0) return;
+        
+        const totalTradingDays = yearsToGoal * 252; // 假设每年 252 个交易日
 
-        const requiredCAGR = Math.pow(targetW / initialW, 1 / yearsToGoal) - 1;
-        const dailyReqRate = Math.pow(1 + requiredCAGR, 1 / 252) - 1;
+        // 1. 二分法计算加入了“每天定投现金流”后，实际所需的真实日均复合增长率
+        let low = -0.01; // 极端暴跌
+        let high = 0.01; // 极端暴涨
+        let mid = 0;
+        for(let i=0; i<100; i++){
+            mid = (low + high) / 2;
+            let fv = 0;
+            if (mid !== 0) {
+                // 年金终值公式 (复利部分 + 定投部分)
+                fv = initialW * Math.pow(1 + mid, totalTradingDays) + dailyPMT * (Math.pow(1 + mid, totalTradingDays) - 1) / mid;
+            } else {
+                fv = initialW + dailyPMT * totalTradingDays;
+            }
+            if(fv > targetW) high = mid; else low = mid;
+        }
+        
+        const reqDailyRate = mid;
+        // 折算成名义年化收益率 CAGR
+        const requiredCAGR = Math.pow(1 + reqDailyRate, 252) - 1;
 
-        const labels = [];
-        const actualPath = [];
-        const liabilityPath = [];
+        // 2. 模拟从建仓日到今天的真实资产情况 V(t) - 包含定投！
+        const firstD = cachedHistData[0];
+        let sharesV = (initialW * wV) / firstD['VUAA.DE'];
+        let sharesX = (initialW * wX) / firstD['XNAS.DE'];
+        let sharesG = (initialW * wG) / firstD['VGWE.DE'];
+
         let currentLiability = initialW;
         
-        const firstD = cachedHistData[0];
+        const labels = [firstD.date];
+        const actualPath = [initialW];
+        const liabilityPath = [initialW];
 
-        cachedHistData.forEach((dayData) => {
+        for(let i = 1; i < cachedHistData.length; i++) {
+            const dayData = cachedHistData[i];
             labels.push(dayData.date);
-            let ret = ( (dayData['VUAA.DE']/firstD['VUAA.DE']) * wV ) + 
-                      ( (dayData['XNAS.DE']/firstD['XNAS.DE']) * wX ) + 
-                      ( (dayData['VGWE.DE']/firstD['VGWE.DE']) * wG );
-            
-            actualPath.push(initialW * ret);
-            currentLiability = currentLiability * (1 + dailyReqRate);
+
+            // 每天发工资打入 20 欧，按权重分别买入三只 ETF 真实份额
+            sharesV += (dailyPMT * wV) / dayData['VUAA.DE'];
+            sharesX += (dailyPMT * wX) / dayData['XNAS.DE'];
+            sharesG += (dailyPMT * wG) / dayData['VGWE.DE'];
+
+            // 结算今天的真实身价 V(t)
+            let dailyActual = (sharesV * dayData['VUAA.DE']) + (sharesX * dayData['XNAS.DE']) + (sharesG * dayData['VGWE.DE']);
+            actualPath.push(dailyActual);
+
+            // 结算今天的目标身价 L(t) (按照推算出的完美每日增长率 + 新存入的本金)
+            currentLiability = currentLiability * (1 + reqDailyRate) + dailyPMT;
             liabilityPath.push(currentLiability);
-        });
+        }
 
         const currentActual = actualPath[actualPath.length - 1];
         const currentTarget = liabilityPath[liabilityPath.length - 1];
         const fundingRatio = (currentActual / currentTarget) * 100;
 
+        // 3. 补全未来投影到图表右侧 (以年为单位跳跃投影)
         const today = new Date();
         const currentYear = today.getFullYear();
+        let projectedLiability = currentLiability;
+        
         for(let y = currentYear + 1; y <= targetYr; y++) {
             labels.push(y.toString());
-            liabilityPath.push(initialW * Math.pow(1 + requiredCAGR, y - startYr));
+            // 每年发生 252 次定投和复利
+            for(let d=0; d<252; d++) {
+                projectedLiability = projectedLiability * (1 + reqDailyRate) + dailyPMT;
+            }
+            liabilityPath.push(projectedLiability);
             actualPath.push(null); 
         }
 
+        // 4. UI 渲染
         let statusHtml = '';
-        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: AHEAD OF SCHEDULE</div>`; }
-        else if (fundingRatio >= 90) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MONITOR CLOSELY</div>`; }
-        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE CONTRIBUTIONS</div>`; }
+        if (fundingRatio >= 100) { statusHtml = `<div class="status-badge" style="background:rgba(16,185,129,0.2); color:var(--up-green); border:1px solid var(--up-green);">🟢 SURPLUS: ON TRACK TO €1 MILLION</div>`; }
+        else if (fundingRatio >= 95) { statusHtml = `<div class="status-badge" style="background:rgba(245,158,11,0.2); color:var(--warning-yellow); border:1px solid var(--warning-yellow);">🟡 SLIGHT DEFICIT: MAINTAIN DCA DISCIPLINE</div>`; }
+        else { statusHtml = `<div class="status-badge" style="background:rgba(239,68,68,0.2); color:var(--down-red); border:1px solid var(--down-red);">🔴 SHORTFALL: INCREASE DAILY DEPOSIT</div>`; }
 
         document.getElementById('alm-results-container').innerHTML = `
-            <div class="res-row"><span class="res-label">Required CAGR</span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
+            <div class="res-row"><span class="res-label">Required CAGR <span style="font-size:10px;color:var(--accent-blue);">(with DCA)</span></span><span class="res-val" style="color:var(--text-main);">${(requiredCAGR * 100).toFixed(2)}%</span></div>
             <div class="res-row"><span class="res-label">Today's Target L(t)</span><span class="res-val" style="color:var(--alm-purple);">€ ${currentTarget.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
-            <div class="res-row"><span class="res-label">Actual V(t) (Weighted)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
+            <div class="res-row"><span class="res-label">Actual V(t) (DCA + Market)</span><span class="res-val" style="color:var(--up-green);">€ ${currentActual.toLocaleString(undefined, {maximumFractionDigits:0})}</span></div>
             <div class="res-row" style="border-bottom:none; margin-bottom:5px; margin-top:10px;"><span class="res-label">Funding Ratio (V/L)</span><span class="res-val" style="font-size:24px;">${fundingRatio.toFixed(1)}%</span></div>
             ${statusHtml}
         `;
@@ -421,13 +449,13 @@
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Weighted Actual V(t)', data: actualPath, borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'), borderWidth: 2, fill: true, tension: 0.1, pointRadius: 2, hitRadius: 10 },
+                    { label: 'Actual V(t) w/ DCA', data: actualPath, borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0)'), borderWidth: 2, fill: true, tension: 0.1, pointRadius: 2, hitRadius: 10 },
                     { label: 'Target Liability L(t)', data: liabilityPath, borderColor: '#c084fc', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.1, pointRadius: 2, hitRadius: 10 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                animation: { duration: 0 }, // ALM 拖动重绘过于频繁，关闭动画避免卡顿
+                animation: { duration: 0 }, 
                 plugins: { legend: { display: true, labels: { color: '#94a3b8', font: {family: 'monospace'} } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#334155', borderWidth: 1 } },
                 scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(255,255,255,0.03)' }, position: 'right', ticks: { color: '#64748b' } } }
             }
