@@ -1,6 +1,6 @@
 import yfinance as yf
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import json
 
@@ -11,12 +11,11 @@ CORE_PAIRS = {
     'VGWE.DE': {'name': '全球高息 (VGWE)'}
 }
 
-# 设定你财富帝国的基准日 (Inception Date)
 INCEPTION_DATE = "2026-01-01"
 
 
 def fetch_data():
-    print(f"🚀 开始抓取最新行情，并拉取自 {INCEPTION_DATE} 以来的全部历史走势...")
+    print(f"🚀 开始抓取最新行情，并增量更新自 {INCEPTION_DATE} 以来的历史走势...")
     tickers_str = " ".join(CORE_PAIRS.keys())
 
     try:
@@ -24,9 +23,6 @@ def fetch_data():
         data = yf.download(tickers_str, period="5d", progress=False, threads=True)
         close_prices = data['Close']
 
-        # 2. 从基准日开始抓取到今天的所有日线数据
-        hist_data = yf.download(tickers_str, start=INCEPTION_DATE, progress=False, threads=True)
-        hist_close = hist_data['Close']
     except Exception as e:
         print(f"❌ 抓取失败: {e}")
         return
@@ -58,14 +54,52 @@ def fetch_data():
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump({"timestamp": update_time, "data": results}, f, ensure_ascii=False, indent=4)
 
-    # ================= 2. 生成 history.json (无限延伸的折线图) =================
-    history_list = []
-    for date, row in hist_close.iterrows():
-        day_data = {"date": date.strftime('%Y-%m-%d')}
-        for ticker in CORE_PAIRS.keys():
-            val = row[ticker]
-            day_data[ticker] = round(float(val), 2) if pd.notna(val) else None
-        history_list.append(day_data)
+    # ================= 2. 增量更新 history.json (无限延伸的折线图) =================
+    try:
+        with open('history.json', 'r', encoding='utf-8') as f:
+            existing_history = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_history = []
+
+    # 计算本地已有的最后日期
+    if existing_history:
+        last_date_str = existing_history[-1].get("date", INCEPTION_DATE)
+    else:
+        last_date_str = INCEPTION_DATE
+
+    try:
+        last_date = datetime.strptime(last_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        last_date = datetime.strptime(INCEPTION_DATE, "%Y-%m-%d").date()
+
+    start_date = last_date + timedelta(days=1)
+    today_utc = datetime.utcnow().date()
+
+    # 如果已经追平到今天，则无需再拉增量
+    if start_date > today_utc:
+        history_list = existing_history
+    else:
+        print(f"📈 从 {start_date} 开始增量拉取历史数据...")
+        try:
+            # yfinance 的 start 为包含式区间，指定 start 不指定 end 默认到今天
+            hist_data = yf.download(tickers_str, start=start_date.strftime("%Y-%m-%d"), progress=False, threads=True)
+            if hist_data.empty:
+                print("ℹ️ 没有新的历史数据需要追加。")
+                history_list = existing_history
+            else:
+                hist_close = hist_data["Close"]
+                new_history = []
+                for date, row in hist_close.iterrows():
+                    day_data = {"date": date.strftime('%Y-%m-%d')}
+                    for ticker in CORE_PAIRS.keys():
+                        val = row[ticker]
+                        day_data[ticker] = round(float(val), 2) if pd.notna(val) else None
+                    new_history.append(day_data)
+
+                history_list = existing_history + new_history
+        except Exception as e:
+            print(f"⚠️ 增量拉取历史数据时出错: {e}")
+            history_list = existing_history
 
     with open('history.json', 'w', encoding='utf-8') as f:
         json.dump(history_list, f, ensure_ascii=False, indent=4)
