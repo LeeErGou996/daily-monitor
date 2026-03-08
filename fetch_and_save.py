@@ -101,6 +101,12 @@ def fetch_data():
             print(f"⚠️ 增量拉取历史数据时出错: {e}")
             history_list = existing_history
 
+    # 去重并统一按日期排序
+    unique_history = {}
+    for item in history_list:
+        unique_history[item["date"]] = item
+    history_list = sorted(unique_history.values(), key=lambda x: x["date"])
+
     with open('history.json', 'w', encoding='utf-8') as f:
         json.dump(history_list, f, ensure_ascii=False, indent=4)
 
