@@ -20,7 +20,7 @@ def fetch_data():
 
     try:
         # 1. 抓取最新快照（用于顶部实时看板）
-        data = yf.download(tickers_str, period="5d", progress=False, threads=True)
+        data = yf.download(tickers_str, period="1mo", progress=False, threads=True)
         close_prices = data['Close']
 
     except Exception as e:
