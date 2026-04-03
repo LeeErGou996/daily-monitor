@@ -1,26 +1,26 @@
 {
-    "timestamp": "2026-04-03 05:25:28",
+    "timestamp": "2026-04-03 15:36:40",
     "data": [
         {
             "ticker": "VUAA.DE",
             "name": "标普500 (VUAA)",
-            "price": 107.57,
-            "change_pct": -0.08,
-            "change_amt": -0.09
+            "price": 109.64,
+            "change_pct": 1.92,
+            "change_amt": 2.07
         },
         {
             "ticker": "XNAS.DE",
             "name": "纳指100 (XNAS)",
-            "price": 46.94,
-            "change_pct": -0.11,
-            "change_amt": -0.05
+            "price": 48.19,
+            "change_pct": 2.65,
+            "change_amt": 1.25
         },
         {
             "ticker": "VGWE.DE",
             "name": "全球高息 (VGWE)",
-            "price": 97.23,
-            "change_pct": 16.86,
-            "change_amt": 14.03
+            "price": 84.17,
+            "change_pct": -13.43,
+            "change_amt": -13.06
         }
     ]
 }
