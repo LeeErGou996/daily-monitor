@@ -1,13 +1,6 @@
 {
-    "timestamp": "2026-07-19 15:46:52",
+    "timestamp": "2026-07-20 05:57:56",
     "data": [
-        {
-            "ticker": "VUAA.DE",
-            "name": "标普500 (VUAA)",
-            "price": 126.14,
-            "change_pct": -1.21,
-            "change_amt": -1.54
-        },
         {
             "ticker": "XNAS.DE",
             "name": "纳指100 (XNAS)",
