@@ -40,3 +40,13 @@
 - [x] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering. Default-parameter regression passed and GitHub Pages build/deploy completed successfully.
 - [x] Verify proportional date spacing, latest-data boundary marker, negative-CAGR explanation, and unchanged numerical outputs before publishing. Screenshot configuration regression passed and GitHub Pages build/deploy completed successfully.
 - [x] Verify natural-day contribution totals, weekend/holiday accumulation, solver outputs, chart continuity, and responsive rendering before publishing. Natural-day regression passed; GitHub Actions data update and Pages build/deploy completed successfully.
+
+## 6. v3 Pro dashboard (branch `feature/dashboard-v3-pro-20261004`)
+- [x] Keep `/v2/` and `/legacy/` unchanged; add `/v3/` and point the repository root redirect to `/v3/`.
+- [x] Restyle: dark/light theme, refined layout, sparkline asset cards, responsive down to 390px.
+- [x] Analytics window selector (1M/3M/6M/YTD/ALL), configurable risk-free rate, benchmark, rebalancing policy and trading cost.
+- [x] Risk desk: Sharpe, Sortino, Calmar, VaR/CVaR 95%, beta/alpha, tracking error, information ratio, drawdown, rolling volatility, rolling beta, correlation matrix, risk contribution, return distribution.
+- [x] Returns calendar, best/worst periods, rebalance trade planner (EUR and shares) and policy comparison net of costs.
+- [x] Beta-based stress scenarios and worst realized windows.
+- [x] CPPI historical backtest; Goal Projection model unchanged (output verified identical to v2) plus Monte Carlo goal probability.
+- [x] CSV export and print/PDF.
