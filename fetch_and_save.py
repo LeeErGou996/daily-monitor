@@ -8,6 +8,7 @@ import json
 CORE_PAIRS = {
     'VUAA.DE': {'name': '标普500 (VUAA)'},
     'XNAS.DE': {'name': '纳指100 (XNAS)'},
+    'SEC0.DE': {'name': '全球半导体 (SEC0)'},
     'VGWE.DE': {'name': '全球高息 (VGWE)'}
 }
 
@@ -52,51 +53,64 @@ def fetch_data():
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump({"timestamp": update_time, "data": results}, f, ensure_ascii=False, indent=4)
 
-    # ================= 2. 增量更新 history.json (无限延伸的折线图) =================
+    # ================= 2. 更新 history.json =================
     try:
         with open('history.json', 'r', encoding='utf-8') as f:
             existing_history = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         existing_history = []
 
-    # 计算本地已有的最后日期
-    if existing_history:
+    # 新增资产时，旧 history.json 没有对应字段。此时从基准日完整回填一次；
+    # 正常情况下仍只做增量更新，避免每次重复下载全部历史。
+    missing_tickers = [
+        ticker for ticker in CORE_PAIRS
+        if existing_history and not any(ticker in item for item in existing_history)
+    ]
+    needs_full_backfill = bool(missing_tickers)
+
+    if needs_full_backfill:
+        print(f"🔄 检测到新增资产 {missing_tickers}，从 {INCEPTION_DATE} 重新回填完整历史...")
+        start_date = datetime.strptime(INCEPTION_DATE, "%Y-%m-%d").date()
+    elif existing_history:
         last_date_str = existing_history[-1].get("date", INCEPTION_DATE)
+        try:
+            last_date = datetime.strptime(last_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            last_date = datetime.strptime(INCEPTION_DATE, "%Y-%m-%d").date()
+        start_date = last_date + timedelta(days=1)
     else:
-        last_date_str = INCEPTION_DATE
+        start_date = datetime.strptime(INCEPTION_DATE, "%Y-%m-%d").date()
 
-    try:
-        last_date = datetime.strptime(last_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        last_date = datetime.strptime(INCEPTION_DATE, "%Y-%m-%d").date()
-
-    start_date = last_date + timedelta(days=1)
     today_utc = datetime.utcnow().date()
 
-    # 如果已经追平到今天，则无需再拉增量
-    if start_date > today_utc:
+    if start_date > today_utc and not needs_full_backfill:
         history_list = existing_history
     else:
-        print(f"📈 从 {start_date} 开始增量拉取历史数据...")
+        mode = "完整回填" if needs_full_backfill or not existing_history else "增量拉取"
+        print(f"📈 从 {start_date} 开始{mode}历史数据...")
         try:
-            # yfinance 的 start 为包含式区间，指定 start 不指定 end 默认到今天
-            hist_data = yf.download(tickers_str, start=start_date.strftime("%Y-%m-%d"), progress=False, threads=True)
+            hist_data = yf.download(
+                tickers_str,
+                start=start_date.strftime("%Y-%m-%d"),
+                progress=False,
+                threads=True
+            )
             if hist_data.empty:
-                print("ℹ️ 没有新的历史数据需要追加。")
+                print("ℹ️ 没有新的历史数据需要写入。")
                 history_list = existing_history
             else:
                 hist_close = hist_data["Close"]
-                new_history = []
+                downloaded_history = []
                 for date, row in hist_close.iterrows():
                     day_data = {"date": date.strftime('%Y-%m-%d')}
                     for ticker in CORE_PAIRS.keys():
                         val = row[ticker]
                         day_data[ticker] = round(float(val), 2) if pd.notna(val) else None
-                    new_history.append(day_data)
+                    downloaded_history.append(day_data)
 
-                history_list = existing_history + new_history
+                history_list = downloaded_history if needs_full_backfill or not existing_history else existing_history + downloaded_history
         except Exception as e:
-            print(f"⚠️ 增量拉取历史数据时出错: {e}")
+            print(f"⚠️ 历史数据更新失败: {e}")
             history_list = existing_history
 
     # 去重并统一按日期排序
