@@ -73,7 +73,7 @@
     .card-label { font-size:11px; color:var(--muted); margin-bottom:7px; }
     .card-value { font-size:20px; font-weight:700; letter-spacing:-.02em; }
     .card-sub { margin-top:5px; font-size:11px; color:var(--muted); }
-    .market-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+    .market-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
     .asset-name { font-size:13px; font-weight:600; }
     .asset-ticker { color:var(--muted); font-size:11px; margin-top:3px; }
     .asset-price { margin-top:14px; font-size:19px; font-weight:700; }
@@ -144,11 +144,13 @@
     </nav>
     <section class="allocation">
       <div class="section-kicker">Portfolio allocation</div>
-      <div class="weight-row"><span>VUAA</span><strong id="vuaa-label">40%</strong></div>
-      <input id="w-vuaa" type="range" min="0" max="100" value="40">
-      <div class="weight-row"><span>XNAS</span><strong id="xnas-label">40%</strong></div>
-      <input id="w-xnas" type="range" min="0" max="100" value="40">
-      <div class="derived"><span>VGWE remainder</span><strong id="vgwe-label">20%</strong></div>
+      <div class="weight-row"><span>VUAA</span><strong id="vuaa-label">35%</strong></div>
+      <input id="w-vuaa" type="range" min="0" max="100" value="35">
+      <div class="weight-row"><span>XNAS</span><strong id="xnas-label">35%</strong></div>
+      <input id="w-xnas" type="range" min="0" max="100" value="35">
+      <div class="weight-row"><span>SEC0</span><strong id="sec0-label">20%</strong></div>
+      <input id="w-sec0" type="range" min="0" max="100" value="20">
+      <div class="derived"><span>VGWE remainder</span><strong id="vgwe-label">10%</strong></div>
     </section>
   </aside>
 
@@ -165,7 +167,7 @@
       <div class="kpis">
         <div class="card"><div class="card-label">Portfolio return</div><div id="kpi-return" class="card-value">—</div><div class="card-sub">Since history start</div></div>
         <div class="card"><div class="card-label">Latest daily move</div><div id="kpi-day" class="card-value">—</div><div class="card-sub">Weight-adjusted approximation</div></div>
-        <div class="card"><div class="card-label">Allocation</div><div id="kpi-allocation" class="card-value">40 / 40 / 20</div><div class="card-sub">VUAA / XNAS / VGWE</div></div>
+        <div class="card"><div class="card-label">Allocation</div><div id="kpi-allocation" class="card-value">35 / 35 / 20 / 10</div><div class="card-sub">VUAA / XNAS / SEC0 / VGWE</div></div>
         <div class="card"><div class="card-label">History start</div><div id="kpi-start" class="card-value">—</div><div class="card-sub">First available observation</div></div>
       </div>
 
@@ -237,6 +239,7 @@
 const TICKERS = [
   { key: 'VUAA.DE', short: 'VUAA', color: '#60a5fa' },
   { key: 'XNAS.DE', short: 'XNAS', color: '#34d399' },
+  { key: 'SEC0.DE', short: 'SEC0', color: '#c084fc' },
   { key: 'VGWE.DE', short: 'VGWE', color: '#fbbf24' }
 ];
 
@@ -244,7 +247,7 @@ let historyData = [];
 let snapshotData = null;
 let overviewChart = null;
 let tvmChart = null;
-let weights = { vuaa: 40, xnas: 40, vgwe: 20 };
+let weights = { vuaa: 35, xnas: 35, sec0: 20, vgwe: 10 };
 
 const fmtPct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 const fmtEur = v => new Intl.NumberFormat('en-DE', { style:'currency', currency:'EUR', maximumFractionDigits:2 }).format(v);
@@ -261,41 +264,52 @@ document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click'
 
 function loadSettings() {
   try {
-    const saved = JSON.parse(localStorage.getItem('portfolio-monitor-v2') || '{}');
-    if (Number.isFinite(saved.vuaa) && Number.isFinite(saved.xnas) && saved.vuaa >= 0 && saved.xnas >= 0 && saved.vuaa + saved.xnas <= 100) {
+    const saved = JSON.parse(localStorage.getItem('portfolio-monitor-v2-sec0') || '{}');
+    const valuesValid =
+      Number.isFinite(saved.vuaa) && Number.isFinite(saved.xnas) && Number.isFinite(saved.sec0) &&
+      saved.vuaa >= 0 && saved.xnas >= 0 && saved.sec0 >= 0 &&
+      saved.vuaa + saved.xnas + saved.sec0 <= 100;
+    if (valuesValid) {
       weights.vuaa = Math.round(saved.vuaa);
       weights.xnas = Math.round(saved.xnas);
-      weights.vgwe = 100 - weights.vuaa - weights.xnas;
+      weights.sec0 = Math.round(saved.sec0);
+      weights.vgwe = 100 - weights.vuaa - weights.xnas - weights.sec0;
     }
   } catch (_) {}
   document.getElementById('w-vuaa').value = weights.vuaa;
   document.getElementById('w-xnas').value = weights.xnas;
+  document.getElementById('w-sec0').value = weights.sec0;
   updateWeightUI();
 }
-
 function updateWeights(changed) {
   let v = Number(document.getElementById('w-vuaa').value);
   let x = Number(document.getElementById('w-xnas').value);
-  if (v + x > 100) {
-    if (changed === 'vuaa') x = 100 - v;
-    else v = 100 - x;
+  let s0 = Number(document.getElementById('w-sec0').value);
+
+  if (v + x + s0 > 100) {
+    if (changed === 'vuaa') v = Math.max(0, 100 - x - s0);
+    if (changed === 'xnas') x = Math.max(0, 100 - v - s0);
+    if (changed === 'sec0') s0 = Math.max(0, 100 - v - x);
   }
-  weights = { vuaa: v, xnas: x, vgwe: 100 - v - x };
+
+  weights = { vuaa: v, xnas: x, sec0: s0, vgwe: 100 - v - x - s0 };
   document.getElementById('w-vuaa').value = v;
   document.getElementById('w-xnas').value = x;
-  localStorage.setItem('portfolio-monitor-v2', JSON.stringify(weights));
+  document.getElementById('w-sec0').value = s0;
+  localStorage.setItem('portfolio-monitor-v2-sec0', JSON.stringify(weights));
   updateWeightUI();
   renderOverview();
   if (document.getElementById('tvm').classList.contains('active')) calculateTVM();
 }
 document.getElementById('w-vuaa').addEventListener('input', () => updateWeights('vuaa'));
 document.getElementById('w-xnas').addEventListener('input', () => updateWeights('xnas'));
-
+document.getElementById('w-sec0').addEventListener('input', () => updateWeights('sec0'));
 function updateWeightUI() {
   document.getElementById('vuaa-label').textContent = weights.vuaa + '%';
   document.getElementById('xnas-label').textContent = weights.xnas + '%';
+  document.getElementById('sec0-label').textContent = weights.sec0 + '%';
   document.getElementById('vgwe-label').textContent = weights.vgwe + '%';
-  document.getElementById('kpi-allocation').textContent = `${weights.vuaa} / ${weights.xnas} / ${weights.vgwe}`;
+  document.getElementById('kpi-allocation').textContent = `${weights.vuaa} / ${weights.xnas} / ${weights.sec0} / ${weights.vgwe}`;
 }
 
 function normalizedSeries(key) {
@@ -311,6 +325,7 @@ function portfolioSeries() {
   const bases = {
     'VUAA.DE': first['VUAA.DE'],
     'XNAS.DE': first['XNAS.DE'],
+    'SEC0.DE': first['SEC0.DE'],
     'VGWE.DE': first['VGWE.DE']
   };
   return historyData.map(d => {
@@ -318,6 +333,7 @@ function portfolioSeries() {
     return 100 * (
       (weights.vuaa / 100) * d['VUAA.DE'] / bases['VUAA.DE'] +
       (weights.xnas / 100) * d['XNAS.DE'] / bases['XNAS.DE'] +
+      (weights.sec0 / 100) * d['SEC0.DE'] / bases['SEC0.DE'] +
       (weights.vgwe / 100) * d['VGWE.DE'] / bases['VGWE.DE']
     );
   });
@@ -329,7 +345,8 @@ function renderOverview() {
   const lastPortfolio = [...portfolio].reverse().find(Number.isFinite);
   const cumulative = Number.isFinite(lastPortfolio) ? lastPortfolio - 100 : 0;
   const latestMove = snapshotData.data.reduce((sum, item) => {
-    const w = item.ticker === 'VUAA.DE' ? weights.vuaa : item.ticker === 'XNAS.DE' ? weights.xnas : weights.vgwe;
+    const weightByTicker = { 'VUAA.DE': weights.vuaa, 'XNAS.DE': weights.xnas, 'SEC0.DE': weights.sec0, 'VGWE.DE': weights.vgwe };
+    const w = weightByTicker[item.ticker] || 0;
     return sum + (w / 100) * item.change_pct;
   }, 0);
 
@@ -483,6 +500,7 @@ function calculateTVM() {
   let shares = {
     vuaa: initial * (weights.vuaa/100) / startRow['VUAA.DE'],
     xnas: initial * (weights.xnas/100) / startRow['XNAS.DE'],
+    sec0: initial * (weights.sec0/100) / startRow['SEC0.DE'],
     vgwe: initial * (weights.vgwe/100) / startRow['VGWE.DE']
   };
   let requiredValue = initial;
@@ -496,10 +514,11 @@ function calculateTVM() {
     if (i > startIndex) {
       shares.vuaa += pmt * (weights.vuaa/100) / d['VUAA.DE'];
       shares.xnas += pmt * (weights.xnas/100) / d['XNAS.DE'];
+      shares.sec0 += pmt * (weights.sec0/100) / d['SEC0.DE'];
       shares.vgwe += pmt * (weights.vgwe/100) / d['VGWE.DE'];
       requiredValue = requiredValue * (1 + baseline.rate) + pmt;
     }
-    const actual = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.vgwe*d['VGWE.DE'];
+    const actual = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.sec0*d['SEC0.DE'] + shares.vgwe*d['VGWE.DE'];
     labels.push(d.date);
     actualPath.push(actual);
     requiredPath.push(requiredValue);
