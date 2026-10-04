@@ -98,6 +98,17 @@
     .result-row:last-child { border-bottom:0; }
     .result-label { color:var(--muted); font-size:12px; }
     .result-value { font-weight:700; text-align:right; }
+    .goal-input-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+    .goal-input-grid .input-block { min-width:0; }
+    .goal-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:12px; }
+    .goal-kpi { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; min-width:0; }
+    .goal-kpi-label { color:var(--muted); font-size:11px; margin-bottom:8px; }
+    .goal-kpi-value { font-size:22px; font-weight:750; letter-spacing:-.02em; }
+    .goal-kpi-sub { margin-top:7px; color:var(--muted); font-size:11px; line-height:1.45; }
+    .goal-status { margin-bottom:16px; border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:#0b1220; color:var(--muted); font-size:12px; line-height:1.5; }
+    .goal-status strong { color:var(--text); }
+    .goal-kpi-wide { grid-column:1 / -1; }
+    .goal-chart-meta { color:var(--muted); font-size:11px; }
     .status {
       margin-top: 8px; border-radius:8px; padding:11px 12px; font-size:12px; border:1px solid var(--border);
       background:#0b1220;
@@ -121,12 +132,15 @@
       .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .market-grid { grid-template-columns:1fr; }
       .form-grid { grid-template-columns:1fr; }
+      .goal-input-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .goal-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .page-head { flex-direction:column; }
       .chart-wrap { height:300px; }
     }
     @media (max-width: 560px) {
       .nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .kpis { grid-template-columns:1fr 1fr; }
+      .goal-input-grid, .goal-kpis { grid-template-columns:1fr; }
       h1 { font-size:22px; }
       .main { padding-inline:10px; }
     }
@@ -210,25 +224,33 @@
       <div class="page-head">
         <div>
           <h1>Goal Projection</h1>
-          <p class="subtitle">Required-return path based on the current portfolio allocation and recorded daily closes.</p>
+          <p class="subtitle">Track the modeled portfolio against the wealth path required to reach your target.</p>
         </div>
       </div>
-      <div class="form-grid">
-        <div class="panel fields">
-          <div><label for="tvm-start">Start month</label><input id="tvm-start" type="month" value="2026-01"></div>
-          <div><label for="tvm-target-date">Target month</label><input id="tvm-target-date" type="month" value="2051-01"></div>
-          <div><label for="tvm-initial">Initial capital (€)</label><input id="tvm-initial" type="number" min="0" value="1000" step="100"></div>
-          <div><label for="tvm-daily">Daily DCA (€ per trading day)</label><input id="tvm-daily" type="number" min="0" value="20" step="1"></div>
-          <div><label for="tvm-target">Target wealth (€)</label><input id="tvm-target" type="number" min="1" value="500000" step="5000"></div>
-        </div>
-        <div class="panel results" id="tvm-results"></div>
-      </div>
+
       <div class="panel">
-        <div class="panel-title"><h2>Actual vs required path</h2><span>Recorded closes + forward target path</span></div>
+        <div class="panel-title"><h2>Plan inputs</h2><span>Saved automatically in this browser</span></div>
+        <div class="goal-input-grid">
+          <div class="input-block"><label for="tvm-start">Start month</label><input id="tvm-start" type="month" value="2026-01"></div>
+          <div class="input-block"><label for="tvm-target-date">Target month</label><input id="tvm-target-date" type="month" value="2051-01"></div>
+          <div class="input-block"><label for="tvm-initial">Initial capital (€)</label><input id="tvm-initial" type="number" min="0" value="1000" step="100"></div>
+          <div class="input-block"><label for="tvm-daily">Daily DCA (€)</label><input id="tvm-daily" type="number" min="0" value="20" step="1"></div>
+          <div class="input-block"><label for="tvm-target">Target wealth (€)</label><input id="tvm-target" type="number" min="1" value="500000" step="5000"></div>
+        </div>
+      </div>
+
+      <div id="tvm-results" class="goal-kpis"></div>
+      <div id="tvm-status" class="goal-status" hidden></div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <h2>Progress vs required path</h2>
+          <span id="tvm-chart-meta" class="goal-chart-meta">Recorded closes + forward required path</span>
+        </div>
         <div class="chart-wrap"><canvas id="tvm-chart"></canvas></div>
         <details>
           <summary>Methodology and limitation</summary>
-          <p>The required rate solves the standard future-value equation for the remaining trading periods. The solver intentionally accepts annualized rates only within −50% to +200%; values outside that range are reported instead of silently returning a boundary. Historical values use available daily closes, so this is a planning model rather than a real-time forecast.</p>
+          <p>Baseline CAGR is the return originally required from the selected start point. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. Historical values use recorded daily closes, so the modeled portfolio is not the same as a live brokerage balance.</p>
         </details>
       </div>
     </section>
@@ -248,6 +270,7 @@ let snapshotData = null;
 let overviewChart = null;
 let tvmChart = null;
 let weights = { vuaa: 35, xnas: 35, sec0: 20, vgwe: 10 };
+const GOAL_STORAGE_KEY = 'portfolio-monitor-goal-v1';
 
 const fmtPct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 const fmtEur = v => new Intl.NumberFormat('en-DE', { style:'currency', currency:'EUR', maximumFractionDigits:2 }).format(v);
@@ -414,6 +437,46 @@ function calculateCPPI() {
 }
 ['cppi-value','cppi-floor','cppi-m'].forEach(id => document.getElementById(id).addEventListener('input', calculateCPPI));
 
+function loadGoalSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(GOAL_STORAGE_KEY) || '{}');
+    const fieldMap = {
+      start: 'tvm-start',
+      targetDate: 'tvm-target-date',
+      initial: 'tvm-initial',
+      daily: 'tvm-daily',
+      target: 'tvm-target'
+    };
+    Object.entries(fieldMap).forEach(([key, id]) => {
+      if (saved[key] !== undefined && saved[key] !== null && saved[key] !== '') {
+        document.getElementById(id).value = saved[key];
+      }
+    });
+  } catch (_) {}
+}
+
+function saveGoalSettings() {
+  const state = {
+    start: document.getElementById('tvm-start').value,
+    targetDate: document.getElementById('tvm-target-date').value,
+    initial: document.getElementById('tvm-initial').value,
+    daily: document.getElementById('tvm-daily').value,
+    target: document.getElementById('tvm-target').value
+  };
+  localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(state));
+}
+
+function setGoalError(message) {
+  document.getElementById('tvm-results').innerHTML = `
+    <div class="goal-kpi goal-kpi-wide">
+      <div class="goal-kpi-label">Projection unavailable</div>
+      <div class="error">${message}</div>
+    </div>`;
+  const status = document.getElementById('tvm-status');
+  status.hidden = true;
+  status.textContent = '';
+}
+
 function futureValue(pv, pmt, n, r) {
   if (Math.abs(r) < 1e-10) return pv + pmt * n;
   const growth = Math.pow(1 + r, n);
@@ -437,18 +500,24 @@ function solveRequiredDailyRate(pv, pmt, n, target) {
 }
 
 function calculateTVM() {
-  const box = document.getElementById('tvm-results');
+  const results = document.getElementById('tvm-results');
+  const statusBox = document.getElementById('tvm-status');
+  saveGoalSettings();
+
   if (!historyData.length) {
-    box.innerHTML = '<div class="error">Market history is not available.</div>';
+    setGoalError('Market history is not available.');
     return;
   }
+
   const startStr = document.getElementById('tvm-start').value;
   const targetStr = document.getElementById('tvm-target-date').value;
   const initial = Math.max(0, Number(document.getElementById('tvm-initial').value) || 0);
   const pmt = Math.max(0, Number(document.getElementById('tvm-daily').value) || 0);
   const target = Number(document.getElementById('tvm-target').value) || 0;
+
   if (!startStr || !targetStr || target <= 0) {
-    box.innerHTML = '<div class="error">Enter a valid start month, target month, and wealth target.</div>';
+    setGoalError('Enter a valid start month, target month, and wealth target.');
+    clearTVMChart();
     return;
   }
 
@@ -458,24 +527,24 @@ function calculateTVM() {
   const lastHistD = new Date(historyData[historyData.length-1].date + 'T00:00:00');
 
   if (targetD <= startD) {
-    box.innerHTML = '<div class="error">Target month must be after start month.</div>';
+    setGoalError('Target month must be after start month.');
     clearTVMChart();
     return;
   }
   if (startD > lastHistD) {
-    box.innerHTML = `<div class="error">Start month is after the latest available market history (${historyData[historyData.length-1].date}).</div>`;
+    setGoalError(`Start month is after the latest available market history (${historyData[historyData.length-1].date}).`);
     clearTVMChart();
     return;
   }
   if (targetD <= lastHistD) {
-    box.innerHTML = `<div class="error">Target month must be later than the latest available market history (${historyData[historyData.length-1].date}).</div>`;
+    setGoalError(`Target month must be later than the latest available market history (${historyData[historyData.length-1].date}).`);
     clearTVMChart();
     return;
   }
 
   let startIndex = historyData.findIndex(d => new Date(d.date + 'T00:00:00') >= startD);
   if (startIndex < 0) {
-    box.innerHTML = '<div class="error">No market observation is available on or after the selected start month.</div>';
+    setGoalError('No market observation is available on or after the selected start month.');
     clearTVMChart();
     return;
   }
@@ -485,14 +554,14 @@ function calculateTVM() {
   const totalPeriods = (targetD - effectiveStartD) / 86400000 * (252 / 365.25);
   const baseline = solveRequiredDailyRate(initial, pmt, totalPeriods, target);
   if (!baseline.ok) {
-    box.innerHTML = `<div class="error">${baseline.message}</div>`;
+    setGoalError(baseline.message);
     clearTVMChart();
     return;
   }
 
   const startRow = historyData[startIndex];
   if (!TICKERS.every(t => Number.isFinite(startRow[t.key]) && startRow[t.key] > 0)) {
-    box.innerHTML = '<div class="error">Selected start observation contains missing prices.</div>';
+    setGoalError('Selected start observation contains missing prices.');
     clearTVMChart();
     return;
   }
@@ -505,7 +574,7 @@ function calculateTVM() {
   };
   let requiredValue = initial;
   const labels = [];
-  const actualPath = [];
+  const modeledPath = [];
   const requiredPath = [];
 
   for (let i=startIndex; i<historyData.length; i++) {
@@ -518,22 +587,34 @@ function calculateTVM() {
       shares.vgwe += pmt * (weights.vgwe/100) / d['VGWE.DE'];
       requiredValue = requiredValue * (1 + baseline.rate) + pmt;
     }
-    const actual = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.sec0*d['SEC0.DE'] + shares.vgwe*d['VGWE.DE'];
+    const modeled = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.sec0*d['SEC0.DE'] + shares.vgwe*d['VGWE.DE'];
     labels.push(d.date);
-    actualPath.push(actual);
+    modeledPath.push(modeled);
     requiredPath.push(requiredValue);
   }
 
-  const currentActual = actualPath[actualPath.length-1];
+  const currentModeled = modeledPath[modeledPath.length-1];
   const currentRequired = requiredPath[requiredPath.length-1];
-  const fundingRatio = currentRequired > 0 ? currentActual/currentRequired*100 : 0;
+  const fundingRatio = currentRequired > 0 ? currentModeled/currentRequired*100 : 0;
+  const pathGap = currentModeled - currentRequired;
   const periodsLeft = (targetD - lastHistD) / 86400000 * (252 / 365.25);
-  const adaptive = solveRequiredDailyRate(currentActual, pmt, periodsLeft, target);
+  const adaptive = solveRequiredDailyRate(currentModeled, pmt, periodsLeft, target);
+
   if (!adaptive.ok) {
-    box.innerHTML = `
-      <div class="result-row"><span class="result-label">Baseline CAGR</span><span class="result-value">${(dailyToAnnual(baseline.rate)*100).toFixed(2)}%</span></div>
-      <div class="result-row"><span class="result-label">Funding ratio</span><span class="result-value">${fundingRatio.toFixed(1)}%</span></div>
-      <div class="error">${adaptive.message}</div>`;
+    const baselineCAGR = dailyToAnnual(baseline.rate) * 100;
+    results.innerHTML = `
+      <div class="goal-kpi">
+        <div class="goal-kpi-label">Baseline CAGR</div>
+        <div class="goal-kpi-value">${baselineCAGR.toFixed(2)}%</div>
+        <div class="goal-kpi-sub">Original required annual return.</div>
+      </div>
+      <div class="goal-kpi">
+        <div class="goal-kpi-label">Funding Ratio</div>
+        <div class="goal-kpi-value">${fundingRatio.toFixed(1)}%</div>
+        <div class="goal-kpi-sub">Modeled ${fmtEur(currentModeled)} / Required ${fmtEur(currentRequired)}</div>
+      </div>
+      <div class="goal-kpi goal-kpi-wide"><div class="error">${adaptive.message}</div></div>`;
+    statusBox.hidden = true;
     clearTVMChart();
     return;
   }
@@ -543,53 +624,97 @@ function calculateTVM() {
   while (projDate <= targetD) {
     for (let d=0; d<21; d++) projectedRequired = projectedRequired*(1+baseline.rate)+pmt;
     labels.push(`${projDate.getFullYear()}-${String(projDate.getMonth()+1).padStart(2,'0')}`);
-    actualPath.push(null);
+    modeledPath.push(null);
     requiredPath.push(projectedRequired);
     projDate.setMonth(projDate.getMonth()+1);
   }
 
   const baselineCAGR = dailyToAnnual(baseline.rate) * 100;
   const adaptiveCAGR = dailyToAnnual(adaptive.rate) * 100;
-  const state = fundingRatio >= 100 ? 'On or ahead of the required path.' :
-    fundingRatio >= 95 ? 'Slightly below the required path.' :
-    'Below the required path; the adaptive return requirement has increased.';
+  const cagrDelta = adaptiveCAGR - baselineCAGR;
+  const fundingClass = fundingRatio >= 100 ? 'positive' : 'negative';
+  const gapClass = pathGap >= 0 ? 'positive' : 'negative';
+  const adaptiveClass = cagrDelta <= 0 ? 'positive' : 'negative';
 
-  box.innerHTML = `
-    <div class="result-row"><span class="result-label">Baseline CAGR</span><span class="result-value">${baselineCAGR.toFixed(2)}%</span></div>
-    <div class="result-row"><span class="result-label">Adaptive CAGR</span><span class="result-value">${adaptiveCAGR.toFixed(2)}%</span></div>
-    <div class="result-row"><span class="result-label">Required value now</span><span class="result-value">${fmtEur(currentRequired)}</span></div>
-    <div class="result-row"><span class="result-label">Estimated portfolio now</span><span class="result-value">${fmtEur(currentActual)}</span></div>
-    <div class="result-row"><span class="result-label">Funding ratio</span><span class="result-value">${fundingRatio.toFixed(1)}%</span></div>
-    <div class="status">${state}</div>`;
+  results.innerHTML = `
+    <div class="goal-kpi">
+      <div class="goal-kpi-label">Adaptive CAGR</div>
+      <div class="goal-kpi-value ${adaptiveClass}">${adaptiveCAGR.toFixed(2)}%</div>
+      <div class="goal-kpi-sub">${cagrDelta >= 0 ? '+' : ''}${cagrDelta.toFixed(2)} pp vs baseline.</div>
+    </div>
+    <div class="goal-kpi">
+      <div class="goal-kpi-label">Funding Ratio</div>
+      <div class="goal-kpi-value ${fundingClass}">${fundingRatio.toFixed(1)}%</div>
+      <div class="goal-kpi-sub">Modeled ${fmtEur(currentModeled)} / Required ${fmtEur(currentRequired)}</div>
+    </div>
+    <div class="goal-kpi">
+      <div class="goal-kpi-label">Path Gap</div>
+      <div class="goal-kpi-value ${gapClass}">${pathGap >= 0 ? '+' : ''}${fmtEur(pathGap)}</div>
+      <div class="goal-kpi-sub">Modeled portfolio minus required path.</div>
+    </div>
+    <div class="goal-kpi">
+      <div class="goal-kpi-label">Baseline CAGR</div>
+      <div class="goal-kpi-value">${baselineCAGR.toFixed(2)}%</div>
+      <div class="goal-kpi-sub">Original required annual return.</div>
+    </div>`;
 
-  renderTVMChart(labels, actualPath, requiredPath);
+  const gapText = pathGap >= 0
+    ? `ahead of the required path by <strong>${fmtEur(pathGap)}</strong>`
+    : `behind the required path by <strong>${fmtEur(Math.abs(pathGap))}</strong>`;
+  const rateText = cagrDelta > 0
+    ? `The required CAGR has increased by <strong>${cagrDelta.toFixed(2)} percentage points</strong> from baseline.`
+    : cagrDelta < 0
+      ? `The required CAGR has decreased by <strong>${Math.abs(cagrDelta).toFixed(2)} percentage points</strong> from baseline.`
+      : 'The required CAGR is unchanged from baseline.';
+
+  statusBox.innerHTML = `The modeled portfolio is ${gapText}. ${rateText}`;
+  statusBox.hidden = false;
+  document.getElementById('tvm-chart-meta').textContent = `Market data through ${historyData[historyData.length-1].date} · Target ${targetStr}`;
+
+  renderTVMChart(labels, modeledPath, requiredPath);
 }
-
-function renderTVMChart(labels, actual, required) {
+function renderTVMChart(labels, modeled, required) {
   const ctx = document.getElementById('tvm-chart');
   if (tvmChart) tvmChart.destroy();
   tvmChart = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[
-      { label:'Actual portfolio', data:actual, borderColor:'#34d399', borderWidth:2, pointRadius:0, tension:.12, spanGaps:false },
+      { label:'Modeled portfolio', data:modeled, borderColor:'#34d399', borderWidth:2, pointRadius:0, tension:.12, spanGaps:false },
       { label:'Required path', data:required, borderColor:'#c084fc', borderWidth:2, borderDash:[6,5], pointRadius:0, tension:.12 }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#cbd5e1',boxWidth:14}}},
+      plugins:{
+        legend:{labels:{color:'#cbd5e1',boxWidth:14}},
+        tooltip:{
+          callbacks:{
+            label: context => `${context.dataset.label}: ${fmtEur(Number(context.raw))}`
+          }
+        }
+      },
       scales:{
         x:{grid:{display:false},ticks:{color:'#64748b',maxTicksLimit:8,maxRotation:0}},
-        y:{position:'right',grid:{color:'rgba(148,163,184,.09)'},ticks:{color:'#64748b'}}
+        y:{
+          position:'right',
+          grid:{color:'rgba(148,163,184,.09)'},
+          ticks:{
+            color:'#64748b',
+            callback: value => '€' + Number(value).toLocaleString('en-DE', {notation:'compact', maximumFractionDigits:1})
+          }
+        }
       }
     }
   });
 }
 function clearTVMChart(){ if(tvmChart){ tvmChart.destroy(); tvmChart=null; } }
 
-['tvm-start','tvm-target-date','tvm-initial','tvm-daily','tvm-target'].forEach(id => document.getElementById(id).addEventListener('input', calculateTVM));
+['tvm-start','tvm-target-date','tvm-initial','tvm-daily','tvm-target'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calculateTVM);
+});
 
 async function init() {
   loadSettings();
+  loadGoalSettings();
   calculateCPPI();
   try {
     const [histRes, dataRes] = await Promise.all([
