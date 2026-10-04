@@ -27,10 +27,10 @@
 - [x] Plot Goal Projection on a proportional time axis so daily historical observations and monthly forward points use their true calendar spacing.
 - [x] Mark the boundary between recorded market history and forward required-path projection.
 - [x] Explain negative required CAGR as a contribution-versus-target condition without changing the solver.
-- [ ] Interpret Daily DCA as an amount contributed every calendar day, including weekends and holidays.
-- [ ] Convert Goal Projection compounding and CAGR annualization from 252 trading days to 365.25 calendar days.
-- [ ] Accumulate non-trading-day contributions and invest them on the next available market-price date in the historical portfolio replay.
-- [ ] Keep the required path, modeled portfolio, Funding Ratio, Path Gap, and adaptive CAGR under the same calendar-day convention.
+- [x] Interpret Daily DCA as an amount contributed every calendar day, including weekends and holidays.
+- [x] Convert Goal Projection compounding and CAGR annualization from 252 trading days to 365.25 calendar days.
+- [x] Accumulate non-trading-day contributions and invest them on the next available market-price date in the historical portfolio replay.
+- [x] Keep the required path, modeled portfolio, Funding Ratio, Path Gap, and adaptive CAGR under the same calendar-day convention.
 
 ## 5. UX and release validation
 - [x] Add responsive layout for narrow screens.
