@@ -148,13 +148,40 @@
     .legend-inline i { width:10px; height:3px; border-radius:2px; display:inline-block; margin-right:6px; vertical-align:middle; }
     .mobile-nav { display:none; }
 
+    .btn.primary { background: linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; }
+    .btn.primary:hover { filter:brightness(1.08); color:#fff; }
+    .btn.drill { width:100%; justify-content:center; color: var(--amber); border-color: color-mix(in srgb, var(--amber) 55%, var(--border-2)); background: color-mix(in srgb, var(--amber) 9%, var(--panel)); }
+    .btn.drill:hover, .btn.drill.active { color:#1b1300; background: var(--amber); border-color: var(--amber); }
+    .sync.sim::before { background: var(--amber); box-shadow:0 0 0 3px color-mix(in srgb, var(--amber) 28%, transparent); }
+    .sync.sim { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--border)); }
+    .drill-banner { position:sticky; top:0; z-index:20; margin:-26px -30px 18px; padding:10px 30px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--amber) 24%, var(--bg-2)), color-mix(in srgb, var(--red) 16%, var(--bg-2)));
+      border-bottom:1px solid color-mix(in srgb, var(--amber) 55%, var(--border)); backdrop-filter: blur(6px); }
+    .drill-banner[hidden] { display:none; }
+    .db-badge { font-weight:800; letter-spacing:.08em; font-size:11px; padding:3px 9px; border-radius:6px; background: var(--amber); color:#1b1300; white-space:nowrap; }
+    .db-title { font-size:12.5px; font-weight:600; }
+    .db-mid { flex:1; min-width:220px; display:flex; gap:10px; align-items:center; font-size:12px; color: var(--text-2); }
+    .db-mid input[type=range] { accent-color: var(--amber); flex:1; min-width:120px; }
+    .db-stats { width:100%; font-size:12px; color: var(--text-2); }
+    .db-stats b.positive { color: var(--green); } .db-stats b.negative { color: var(--red); }
+    body.shadow .main::after { content:"SIMULATION"; position:fixed; right:4%; bottom:6%; font-size:clamp(56px,11vw,160px); font-weight:900; letter-spacing:.1em; color: var(--amber); opacity:.045; transform:rotate(-12deg); pointer-events:none; z-index:0; }
+    body.shadow .logo { background: linear-gradient(135deg,var(--amber),var(--red)); }
+    .verdict { padding:14px; border:1px solid var(--border-2); border-radius:12px; background: var(--panel-2); }
+    .chk { display:flex; gap:12px; align-items:flex-start; padding:11px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .chk:last-of-type { border-bottom:0; }
+    .chk-d { color: var(--muted); font-size:12px; line-height:1.55; margin-top:3px; }
+    .badge { font-size:10px; font-weight:800; letter-spacing:.08em; padding:3px 8px; border-radius:6px; flex:none; margin-top:1px; }
+    .badge.pass { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+    .badge.fail { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+    .zh { font-weight:500; color: var(--muted); font-size:.7em; margin-left:6px; }
+    .subhead { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color: var(--muted); font-weight:600; margin:16px 0 8px; }
     @media (max-width: 1100px) { .kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .market-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .grid-21, .grid-12 { grid-template-columns:minmax(0,1fr); } }
     @media (max-width: 900px) {
       .app { grid-template-columns:minmax(0,1fr); }
       .sidebar { position:static; height:auto; border-right:0; border-bottom:1px solid var(--border); padding:12px 14px; gap:12px; }
       .sidebar .nav { grid-template-columns:repeat(4,minmax(0,1fr)); } .sidebar .nav button, .sidebar .nav a { justify-content:center; padding:9px 6px; font-size:12px; } .sidebar .nav svg, .nav .sep { display:none; }
       .nav { overflow-x:auto; } .side-foot { margin-top:0; }
-      .main { padding:18px 12px 30px; } .grid-2 { grid-template-columns:minmax(0,1fr); }
+      .main { padding:18px 12px 30px; } .drill-banner { margin:-18px -12px 14px; padding:10px 12px; } .grid-2 { grid-template-columns:minmax(0,1fr); }
     }
     @media (max-width: 600px) {
       .kpis, .kpis.k4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .market-grid { grid-template-columns:1fr; }
@@ -179,6 +206,7 @@
       <button data-view="returns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Returns Calendar</button>
       <button data-view="rebalance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>Rebalance</button>
       <button data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>Stress Test</button>
+      <button data-view="drill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg>Fire Drill<span class="zh" style="margin-left:auto">防空演习</span></button>
       <button data-view="cppi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>CPPI</button>
       <button data-view="tvm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Goal Projection</button>
       <div class="sep"></div>
@@ -207,6 +235,8 @@
       <div class="side-field"><label for="a-cost">Trading cost (bps per trade)</label><input id="a-cost" type="number" step="1" min="0" value="5"></div>
     </section>
 
+    <section class="side-block"><button class="btn drill" id="btn-drill">▶ Start fire drill</button></section>
+
     <div class="side-foot">
       <button class="btn" id="btn-theme" title="Toggle light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>Theme</button>
       <button class="btn" id="btn-export" title="Download analysis as CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>CSV</button>
@@ -215,6 +245,12 @@
   </aside>
 
   <main class="main">
+    <div id="drill-banner" class="drill-banner" hidden>
+      <span class="db-badge">FIRE DRILL · 防空演习</span><span class="db-title" id="db-title"></span>
+      <div class="db-mid"><input id="drill-day" type="range" min="0" max="1" value="0" aria-label="Drill day"><span id="db-day"></span></div>
+      <div class="head-tools"><button class="btn" id="db-play">▶ Replay</button><button class="btn" id="db-reroll">Re-roll path</button><button class="btn" id="db-exit">Exit drill</button></div>
+      <div class="db-stats" id="db-stats"></div>
+    </div>
     <!-- OVERVIEW -->
     <section id="overview" class="view active">
       <div class="page-head">
@@ -333,6 +369,68 @@
       </div>
     </section>
 
+    <!-- FIRE DRILL -->
+    <section id="drill" class="view">
+      <div class="page-head"><div><h1>Fire Drill<span class="zh">防空演习</span></h1><p class="subtitle">Rehearse the worst case before it happens. Build a simulated crash that continues from your latest real close, then switch every page of this dashboard into shadow mode and see exactly what you would be looking at. Real data and saved settings are never changed.</p></div>
+        <div class="head-tools"><button class="btn primary" id="fd-start">▶ Start drill (shadow mode)</button></div></div>
+      <div class="grid-12">
+        <div>
+          <div class="panel"><div class="panel-title"><h2>1 · Crash scenario</h2><span class="meta">stylized, editable</span></div>
+            <div class="form-grid">
+              <div><label for="fd-preset">Preset</label><select id="fd-preset">
+                <option value="doc70">Playbook standard: equities −70% over 3 years</option>
+                <option value="dotcom">2000–02 dot-com bust (~30 months)</option>
+                <option value="gfc">2007–09 financial crisis (~17 months)</option>
+                <option value="covid">2020 COVID crash (1 month) + V recovery</option>
+                <option value="bear22">2022 rate-hike bear (~12 months)</option>
+                <option value="cascade">Halved, then halved again (−75% over 4 years)</option>
+                <option value="custom">Custom scenario</option></select></div>
+              <div><label>Peak-to-trough drawdown per ETF (%)</label>
+                <div class="form-row" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+                  <div><label for="fd-dd0" style="color:#5b9dff">VUAA</label><input id="fd-dd0" type="number" min="0" max="97" step="1"></div>
+                  <div><label for="fd-dd1" style="color:#2fd39a">XNAS</label><input id="fd-dd1" type="number" min="0" max="97" step="1"></div>
+                  <div><label for="fd-dd2" style="color:#b794f6">SEC0</label><input id="fd-dd2" type="number" min="0" max="97" step="1"></div>
+                  <div><label for="fd-dd3" style="color:#f5b942">VGWE</label><input id="fd-dd3" type="number" min="0" max="97" step="1"></div></div></div>
+              <div class="form-row">
+                <div><label for="fd-bottom">Time to bottom</label><input id="fd-bottom" type="number" min="0.1" step="1"></div>
+                <div><label for="fd-unit">Unit</label><select id="fd-unit"><option value="months">Months</option><option value="years">Years</option></select></div>
+              </div>
+              <div class="form-row">
+                <div><label for="fd-rec">Then recover over (years, 0 = stay down)</label><input id="fd-rec" type="number" min="0" step="0.5"></div>
+                <div><label for="fd-recto">Recover to (% of old peak)</label><input id="fd-recto" type="number" min="10" step="5"></div>
+                <div><label for="fd-vol">Crash volatility × normal</label><input id="fd-vol" type="number" min="0.5" max="4" step="0.1"></div>
+              </div>
+              <div><button class="btn" id="fd-reroll">Re-roll random path</button></div>
+            </div>
+            <div class="note">Preset figures are rounded, stylized approximations of historical episodes, not exact index data. Only the 2000–02 ≈ −85% Nasdaq-100 and extra ≈ −50% in 2008 figures come from the playbook page; edit any number freely.</div>
+          </div>
+          <div class="panel"><div class="panel-title"><h2>2 · Your situation</h2><span class="meta">saved in this browser</span></div>
+            <div class="form-row">
+              <div><label for="fd-value">Portfolio value today (€)</label><input id="fd-value" type="number" min="0" step="500"></div>
+              <div><label for="fd-exp">Monthly living expenses (€)</label><input id="fd-exp" type="number" min="0" step="100"></div>
+              <div><label for="fd-cash">Cash reserve, not invested (€)</label><input id="fd-cash" type="number" min="0" step="500"></div>
+              <div><label for="fd-role">Stage of life</label><select id="fd-role"><option value="worker">Still working (6 months reserve)</option><option value="retiree">Retired (3 years reserve)</option></select></div>
+              <div><label for="fd-loan">Borrowing against portfolio (€)</label><input id="fd-loan" type="number" min="0" step="500"></div>
+              <div><label for="fd-ltv">Margin call at loan-to-value (%)</label><input id="fd-ltv" type="number" min="1" max="99" step="5"></div>
+            </div>
+            <div class="subhead">Would you hold? (self-assessment)</div>
+            <div class="form-grid">
+              <div><label for="fd-q0">If investments fell 70%, could you carry on with normal daily life?</label><select id="fd-q0"><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Unsure</option></select></div>
+              <div><label for="fd-q1">If the market fell three years in a row (like 2000–2003), could you refrain from selling?</label><select id="fd-q1"><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Unsure</option></select></div>
+              <div><label for="fd-q2">If the portfolio were halved and then halved again (−75%), could you stay calm and follow your plan?</label><select id="fd-q2"><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option><option value="unsure">Unsure</option></select></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>3 · Drill report</h2><span class="meta">current allocation &amp; rebalancing assumptions</span></div><div id="fd-report"></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Portfolio value through the drill</h2><span class="meta">€, from today's value</span></div><div class="chart-wrap md"><canvas id="fd-chart"></canvas></div></div>
+        <div class="panel"><div class="panel-title"><h2>Simulated ETF paths</h2><span class="meta">start = 100</span></div><div class="chart-wrap md"><canvas id="fd-assets"></canvas></div></div>
+      </div>
+      <div class="panel"><div class="panel-title"><h2>Target vs realized drawdown</h2><span class="meta">realized path wanders around the target</span></div><div class="tbl-scroll"><table class="t" id="fd-assets-table"></table></div></div>
+      <div class="footer">Fire drill = rehearsal, not prediction. Review every six months: assume a severe drop, then confirm your collateral stays safe, your reserve covers living costs, and nothing is force-sold. Method inspired by the “Simulating the Worst Case” chapter of the Wealth Bible.</div>
+    </section>
+
     <!-- CPPI -->
     <section id="cppi" class="view">
       <div class="page-head"><div><h1>CPPI Allocation &amp; Backtest</h1><p class="subtitle">Current-state allocation calculator, plus a historical CPPI backtest on your portfolio with cash earning the risk-free rate.</p></div></div>
@@ -401,7 +499,7 @@ const MC_KEY = 'portfolio-monitor-v3-mc';
 const THEME_KEY = 'portfolio-monitor-v3-theme';
 const TD = 252;                      // trading days per year for risk statistics
 const CALENDAR_DAYS_PER_YEAR = 365.25;
-const VIEWS = ['overview','risk','returns','rebalance','stress','cppi','tvm'];
+const VIEWS = ['overview','risk','returns','rebalance','stress','drill','cppi','tvm'];
 
 let rows = [];            // clean daily history
 let snapshot = null;
@@ -457,6 +555,12 @@ function applyChartTheme() {
 function mk(id, cfg) {
   if (charts[id]) { charts[id].destroy(); delete charts[id]; }
   const el = $(id); if (!el) return null;
+  if (typeof shadow !== 'undefined' && shadow.active && shadow.sim.length && cfg.options) {
+    const xs = cfg.options.scales && cfg.options.scales.x; let v = null;
+    if (xs && xs.type === 'linear') v = new Date(shadow.sim[0].date + 'T00:00:00').getTime();
+    else if (Array.isArray(cfg.data.labels)) { const i = cfg.data.labels.indexOf(shadow.sim[0].date); v = i >= 0 ? i : null; }
+    if (v != null) { cfg.plugins = (cfg.plugins || []).concat([drillMarker]); cfg.options.plugins = cfg.options.plugins || {}; cfg.options.plugins.drillMarker = { value: v }; }
+  }
   charts[id] = new Chart(el, cfg);
   return charts[id];
 }
@@ -502,8 +606,9 @@ function isRebalanceDay(prev, cur, freq) {
   return false;
 }
 /** Constant-target-weight simulation. Returns index values (start=100), turnover, costs and end weights. */
-function simulate(start, w, freq, bps, end = rows.length - 1) {
-  const R = rows.slice(start, end + 1);
+function simulate(start, w, freq, bps, end, src) {
+  src = src || rows; if (end == null) end = src.length - 1;
+  const R = src.slice(start, end + 1);
   const h = ASSETS.map((a, k) => 100 * w[k] / R[0][a.key]);
   const vals = [100]; let turnover = 0, cost = 0, trades = 0;
   for (let i = 1; i < R.length; i++) {
@@ -610,7 +715,7 @@ function renderActive() {
   if (!C) C = compute();
   if (!dirty.has(activeView)) return;
   dirty.delete(activeView);
-  ({ overview: renderOverview, risk: renderRisk, returns: renderReturns, rebalance: renderRebalance, stress: renderStress, cppi: renderCPPI, tvm: renderTVM })[activeView]();
+  ({ overview: renderOverview, risk: renderRisk, returns: renderReturns, rebalance: renderRebalance, stress: renderStress, drill: renderDrill, cppi: renderCPPI, tvm: renderTVM })[activeView]();
 }
 document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
 window.addEventListener('hashchange', () => switchView(location.hash.slice(1), false));
@@ -636,7 +741,7 @@ function loadSettings() {
   ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).value = weights[k]);
   updateWeightUI();
 }
-const saveSettings = () => safeStore.set(SETTINGS_KEY, JSON.stringify(S));
+const saveSettings = () => { if (!shadow.active) safeStore.set(SETTINGS_KEY, JSON.stringify(S)); };   // never persist while in shadow mode
 function updateWeightUI() { ASSETS.forEach(a => $(a.wk + '-label').textContent = weights[a.wk] + '%'); }
 function updateWeights(changed) {
   let v = Number($('w-vuaa').value), x = Number($('w-xnas').value), s0 = Number($('w-sec0').value);
@@ -647,11 +752,11 @@ function updateWeights(changed) {
   }
   weights = { vuaa: v, xnas: x, sec0: s0, vgwe: 100 - v - x - s0 };
   $('w-vuaa').value = v; $('w-xnas').value = x; $('w-sec0').value = s0;
-  safeStore.set(WEIGHT_KEY, JSON.stringify(weights));
+  if (!shadow.active) safeStore.set(WEIGHT_KEY, JSON.stringify(weights));
   updateWeightUI(); invalidate();
 }
 ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).addEventListener('input', () => updateWeights(k)));
-$('btn-reset-w').addEventListener('click', () => { weights = { ...DEFAULT_WEIGHTS }; ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).value = weights[k]); safeStore.set(WEIGHT_KEY, JSON.stringify(weights)); updateWeightUI(); invalidate(); });
+$('btn-reset-w').addEventListener('click', () => { weights = { ...DEFAULT_WEIGHTS }; ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).value = weights[k]); if (!shadow.active) safeStore.set(WEIGHT_KEY, JSON.stringify(weights)); updateWeightUI(); invalidate(); });
 $('a-rf').addEventListener('input', e => { const v = Number(e.target.value); if (ok(v)) { S.rf = v; saveSettings(); invalidate(); } });
 $('a-bench').addEventListener('change', e => { S.bench = e.target.value; saveSettings(); invalidate(); });
 $('a-reb').addEventListener('change', e => { S.reb = e.target.value; saveSettings(); invalidate(); });
@@ -671,14 +776,14 @@ $('btn-export').addEventListener('click', exportCSV);
 
 function exportCSV() {
   if (!C) return;
-  const head = ['date', ...ASSETS.map(a => a.key + '_close'), 'portfolio_index', 'portfolio_return', 'portfolio_drawdown'];
+  const head = ['date', ...ASSETS.map(a => a.key + '_close'), 'portfolio_index', 'portfolio_return', 'portfolio_drawdown', 'simulated'];
   const R = rows.slice(C.start), v = C.sim.vals, dd = C.pm.dd || [], r = [null, ...C.pm.rets];
   const lines = [head.join(',')];
-  R.forEach((row, i) => lines.push([row.date, ...ASSETS.map(a => row[a.key]), v[i].toFixed(4), r[i] == null ? '' : r[i].toFixed(6), ok(dd[i]) ? dd[i].toFixed(6) : ''].join(',')));
+  R.forEach((row, i) => lines.push([row.date, ...ASSETS.map(a => row[a.key]), v[i].toFixed(4), r[i] == null ? '' : r[i].toFixed(6), ok(dd[i]) ? dd[i].toFixed(6) : '', row.sim ? 1 : 0].join(',')));
   const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `portfolio-monitor-${S.range}-${rows[rows.length - 1].date}.csv`;
+  a.download = `${shadow.active ? 'SIMULATED-' : ''}portfolio-monitor-${S.range}-${rows[rows.length - 1].date}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
@@ -1149,16 +1254,278 @@ function renderMC() {
 ['mc-mu', 'mc-vol'].forEach(id => $(id).addEventListener('input', renderMC));
 $('mc-use-hist').addEventListener('click', () => { if (!C) return; const v = metrics(C.fullSim.vals, C.rf, null).vol; if (ok(v)) { $('mc-vol').value = (v * 100).toFixed(1); renderMC(); } });
 
+/* ===================== Fire Drill / Shadow mode (防空演习) ===================== */
+const DRILL_KEY = 'portfolio-monitor-v3-drill';
+const MONTH_DAYS = 21;
+const PRESETS = {
+  doc70:   { label: 'Playbook standard: equities −70% over 3 years', dd: [70, 75, 85, 60], bottom: 3,  unit: 'years',  rec: 0,   recTo: 100, shape: 1 },
+  dotcom:  { label: '2000–02 dot-com bust (~30 months)',             dd: [49, 85, 85, 30], bottom: 30, unit: 'months', rec: 0,   recTo: 100, shape: 1 },
+  gfc:     { label: '2007–09 financial crisis (~17 months)',         dd: [55, 53, 60, 55], bottom: 17, unit: 'months', rec: 0,   recTo: 100, shape: 1 },
+  covid:   { label: '2020 COVID crash (1 month) + V recovery',       dd: [34, 30, 37, 35], bottom: 1,  unit: 'months', rec: 0.5, recTo: 100, shape: 0.6 },
+  bear22:  { label: '2022 rate-hike bear (~12 months)',              dd: [25, 35, 45, 15], bottom: 12, unit: 'months', rec: 0,   recTo: 100, shape: 1 },
+  cascade: { label: 'Halved, then halved again (−75% over 4 years)', dd: [75, 78, 88, 65], bottom: 4,  unit: 'years',  rec: 0,   recTo: 100, shape: 1 },
+  custom:  { label: 'Custom scenario' }
+};
+const FD_DEFAULT = { preset: 'doc70', dd: [70, 75, 85, 60], bottom: 3, unit: 'years', rec: 0, recTo: 100, shape: 1, volMult: 1.3, seed: 20261004,
+  value: 10000, expenses: 1500, cash: 9000, role: 'worker', loan: 0, ltv: 50, q: ['', '', ''] };
+let FD = JSON.parse(JSON.stringify(FD_DEFAULT));
+let realRows = [], realSnapshot = null;
+const shadow = { active: false, sim: [], key: '', reveal: 0, saved: null, timer: null, realSync: null };
+const SCENARIO_FIELDS = ['fd-dd0', 'fd-dd1', 'fd-dd2', 'fd-dd3', 'fd-bottom', 'fd-unit', 'fd-rec', 'fd-recto', 'fd-vol'];
+const DRILL_FIELDS = [...SCENARIO_FIELDS, 'fd-value', 'fd-exp', 'fd-cash', 'fd-role', 'fd-loan', 'fd-ltv', 'fd-q0', 'fd-q1', 'fd-q2'];
+
+function loadDrill() {
+  try {
+    const s = JSON.parse(safeStore.get(DRILL_KEY) || '{}');
+    if (!s || typeof s !== 'object') return;
+    if (PRESETS[s.preset]) FD.preset = s.preset;
+    if (['months', 'years'].includes(s.unit)) FD.unit = s.unit;
+    if (['worker', 'retiree'].includes(s.role)) FD.role = s.role;
+    ['bottom', 'rec', 'recTo', 'shape', 'volMult', 'seed', 'value', 'expenses', 'cash', 'loan', 'ltv'].forEach(k => { if (ok(s[k])) FD[k] = s[k]; });
+    if (Array.isArray(s.dd) && s.dd.length === 4 && s.dd.every(ok)) FD.dd = s.dd;
+    if (Array.isArray(s.q) && s.q.length === 3) FD.q = s.q.map(x => ['yes', 'no', 'unsure'].includes(x) ? x : '');
+  } catch (_) {}
+}
+const saveDrill = () => safeStore.set(DRILL_KEY, JSON.stringify(FD));
+function syncDrillInputs() {
+  $('fd-preset').value = FD.preset;
+  FD.dd.forEach((v, i) => $('fd-dd' + i).value = v);
+  $('fd-bottom').value = FD.bottom; $('fd-unit').value = FD.unit; $('fd-rec').value = FD.rec; $('fd-recto').value = FD.recTo; $('fd-vol').value = FD.volMult;
+  $('fd-value').value = FD.value; $('fd-exp').value = FD.expenses; $('fd-cash').value = FD.cash; $('fd-role').value = FD.role; $('fd-loan').value = FD.loan; $('fd-ltv').value = FD.ltv;
+  FD.q.forEach((v, i) => $('fd-q' + i).value = v);
+}
+function readDrillInputs() {
+  const n = (id, d) => { const v = Number($(id).value); return ok(v) ? v : d; };
+  FD.dd = [0, 1, 2, 3].map(i => Math.min(97, Math.max(0, n('fd-dd' + i, 0))));
+  FD.bottom = Math.max(0.1, n('fd-bottom', 1)); FD.unit = $('fd-unit').value; FD.rec = Math.max(0, n('fd-rec', 0)); FD.recTo = Math.max(10, n('fd-recto', 100)); FD.volMult = Math.min(4, Math.max(0.5, n('fd-vol', 1.3)));
+  FD.value = Math.max(0, n('fd-value', 0)); FD.expenses = Math.max(0, n('fd-exp', 0)); FD.cash = Math.max(0, n('fd-cash', 0)); FD.role = $('fd-role').value;
+  FD.loan = Math.max(0, n('fd-loan', 0)); FD.ltv = Math.min(99, Math.max(1, n('fd-ltv', 50)));
+  FD.q = [0, 1, 2].map(i => $('fd-q' + i).value);
+}
+
+function bizDatesAfter(lastDate, count) {
+  const out = []; const d = new Date(lastDate + 'T00:00:00Z');
+  while (out.length < count) { d.setUTCDate(d.getUTCDate() + 1); const w = d.getUTCDay(); if (w !== 0 && w !== 6) out.push(d.toISOString().slice(0, 10)); }
+  return out;
+}
+/** Build simulated daily closes continuing from the last real close. Seeded, so a scenario is reproducible. */
+function genSim() {
+  const R = realRows, n = R.length, last = R[n - 1];
+  const hv = ASSETS.map(a => { const r = []; for (let i = 1; i < n; i++) r.push(R[i][a.key] / R[i - 1][a.key] - 1); return std(r); });
+  const rng = mulberry32(FD.seed >>> 0);
+  const gauss = () => { let u = rng(); if (u < 1e-12) u = 1e-12; return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng()); };
+  const T1 = Math.max(2, Math.round(FD.bottom * (FD.unit === 'years' ? 252 : MONTH_DAYS)));
+  const T2 = FD.rec > 0 ? Math.max(2, Math.round(FD.rec * 252)) : 0;
+  const N = T1 + T2, rho = 0.85, rs = Math.sqrt(1 - rho * rho);   // correlations spike in a crash
+  const z = Array.from({ length: N }, gauss);
+  const xs = ASSETS.map((a, k) => {
+    const dd = Math.min(0.97, Math.max(0, FD.dd[k] / 100)), xT = Math.log(1 - dd);
+    const xEnd = Math.log(Math.max(0.05, FD.recTo / 100));
+    const sig1 = hv[k] * FD.volMult, sig2 = hv[k] * (1 + (FD.volMult - 1) * 0.5);
+    const out = [0];
+    const seg = (len, x0, x1, sig, shape, off) => {            // drift path + Brownian bridge (hits x1 exactly at the end)
+      const B = [0];
+      for (let t = 1; t <= len; t++) B.push(B[t - 1] + sig * (rho * z[off + t - 1] + rs * gauss()));
+      for (let t = 1; t <= len; t++) { const u = t / len; out.push(x0 + (x1 - x0) * Math.pow(u, shape) + (B[t] - u * B[len])); }
+    };
+    seg(T1, 0, xT, sig1, FD.shape, 0);
+    if (dd > 0) {                                              // rescale so the realized peak-to-trough drawdown equals the chosen one
+      let pk = 0, worst = 0; for (let t = 1; t <= T1; t++) { pk = Math.max(pk, out[t]); worst = Math.min(worst, out[t] - pk); }
+      if (worst < -1e-9) { const c = xT / worst; for (let t = 1; t <= T1; t++) out[t] *= c; }
+    }
+    if (T2) { const floor = Math.min(...out); seg(T2, out[T1], xEnd, sig2, 1, T1); for (let t = T1 + 1; t < out.length; t++) out[t] = Math.max(out[t], floor); }   // recovery never dips below the trough
+    return out;
+  });
+  return bizDatesAfter(last.date, N).map((d, i) => {
+    const row = { date: d, sim: true };
+    ASSETS.forEach((a, k) => { row[a.key] = +(last[a.key] * Math.exp(xs[k][i + 1])).toFixed(4); });
+    return row;
+  });
+}
+function ensureSim() {
+  if (!realRows.length) return;
+  const key = JSON.stringify([FD.dd, FD.bottom, FD.unit, FD.rec, FD.recTo, FD.shape, FD.volMult, FD.seed, realRows.length, realRows[realRows.length - 1].date]);
+  if (key !== shadow.key) { shadow.sim = genSim(); shadow.key = key; }
+}
+function buildShadowSnapshot() {
+  const cur = rows[rows.length - 1], prev = rows[rows.length - 2] || cur;
+  const names = Object.fromEntries((realSnapshot ? realSnapshot.data : []).map(i => [i.ticker, i.name]));
+  return { timestamp: `SIMULATION · ${cur.date}`, data: ASSETS.map(a => ({ ticker: a.key, name: names[a.key] || a.label, price: +cur[a.key].toFixed(2),
+    change_pct: +((cur[a.key] / prev[a.key] - 1) * 100).toFixed(2), change_amt: +(cur[a.key] - prev[a.key]).toFixed(2) })) };
+}
+function syncControlsFromState() {
+  $('a-rf').value = S.rf; $('a-bench').value = S.bench; $('a-reb').value = S.reb; $('a-cost').value = S.cost;
+  document.querySelectorAll('#range-seg button').forEach(b => b.classList.toggle('active', b.dataset.range === S.range));
+  document.querySelectorAll('#scale-seg button').forEach(b => b.classList.toggle('active', b.dataset.scale === S.scale));
+  ['vuaa', 'xnas', 'sec0'].forEach(k => $('w-' + k).value = weights[k]);
+  updateWeightUI();
+}
+function setDrillButtons() {
+  $('btn-drill').textContent = shadow.active ? '■ Exit fire drill' : '▶ Start fire drill';
+  $('btn-drill').classList.toggle('active', shadow.active);
+  $('fd-start').textContent = shadow.active ? '■ Exit drill (back to real data)' : '▶ Start drill (shadow mode)';
+}
+function applyShadow() {
+  rows = realRows.concat(shadow.sim.slice(0, shadow.reveal));
+  snapshot = buildShadowSnapshot();
+  const s = $('sync-status'); s.className = 'sync sim'; s.textContent = `SIMULATION · ${rows[rows.length - 1].date}`;
+  updateBanner(); invalidate();
+}
+function enterShadow() {
+  if (!realRows.length) return;
+  ensureSim();
+  if (!shadow.active) {
+    shadow.saved = { S: { ...S }, weights: { ...weights } };
+    shadow.realSync = { cls: $('sync-status').className, txt: $('sync-status').textContent };
+  }
+  shadow.active = true; document.body.classList.add('shadow');
+  S.range = 'ALL'; syncControlsFromState();
+  shadow.reveal = shadow.sim.length;
+  $('drill-banner').hidden = false; setDrillButtons();
+  applyShadow();
+}
+function exitShadow() {
+  stopPlay();
+  if (!shadow.active) return;
+  shadow.active = false; document.body.classList.remove('shadow');
+  S = { ...shadow.saved.S }; weights = { ...shadow.saved.weights }; syncControlsFromState();
+  rows = realRows; snapshot = realSnapshot;
+  const s = $('sync-status'); s.className = shadow.realSync.cls; s.textContent = shadow.realSync.txt;
+  $('drill-banner').hidden = true; setDrillButtons(); invalidate();
+}
+function toggleDrill() {
+  if (shadow.active) { exitShadow(); return; }
+  enterShadow(); switchView('overview');
+}
+function stopPlay() { if (shadow.timer) { clearInterval(shadow.timer); shadow.timer = null; } const b = $('db-play'); if (b) b.textContent = '▶ Replay'; }
+function startPlay() {
+  stopPlay();
+  const N = shadow.sim.length; if (!N) return;
+  shadow.reveal = 1; $('db-play').textContent = '❚❚ Pause'; applyShadow();
+  const step = Math.max(1, Math.ceil(N / 120));
+  shadow.timer = setInterval(() => { shadow.reveal = Math.min(N, shadow.reveal + step); applyShadow(); if (shadow.reveal >= N) stopPlay(); }, 140);
+}
+function updateBanner() {
+  const N = shadow.sim.length, k = shadow.reveal, sl = $('drill-day');
+  sl.max = N; sl.value = k;
+  const d = k ? shadow.sim[k - 1].date : realRows[realRows.length - 1].date;
+  $('db-title').textContent = (PRESETS[FD.preset] || PRESETS.custom).label;
+  const mo = k / MONTH_DAYS;
+  $('db-day').textContent = `Day ${k} / ${N} · ${d} · ${mo < 24 ? mo.toFixed(1) + ' mo' : (mo / 12).toFixed(1) + ' yr'}`;
+  if (k > 0) {
+    const full = realRows.concat(shadow.sim.slice(0, k));
+    const s = simulate(realRows.length - 1, wv(), S.reb, S.cost, undefined, full), dd = drawdownSeries(s.vals);
+    const ret = s.vals[s.vals.length - 1] / 100 - 1, cur = dd[dd.length - 1], worst = Math.min(...dd);
+    $('db-stats').innerHTML = `Portfolio since drill start <b class="${sgn(ret)}">${fmtPct(ret)}</b> · drawdown <b class="negative">${fmtPct(cur)}</b> · worst <b class="negative">${fmtPct(worst)}</b>`;
+  } else $('db-stats').textContent = 'Drill has not started moving yet.';
+}
+
+/* ---- Drill report (always computed on the full simulated path) ---- */
+function drillStats() {
+  const w = wv(), full = realRows.concat(shadow.sim), s0 = realRows.length - 1, N = shadow.sim.length;
+  const sim = simulate(s0, w, S.reb, S.cost, undefined, full), vals = sim.vals;
+  const V0 = Math.max(0, FD.value), path = vals.map(v => V0 * v / 100);
+  const dd = drawdownSeries(vals), ddi = maxDDInfo(vals);
+  let recIdx = -1; for (let i = ddi.troughIdx + 1; i < vals.length; i++) if (vals[i] >= vals[ddi.peakIdx]) { recIdx = i; break; }
+  const assetDD = ASSETS.map(a => maxDDInfo(full.slice(s0).map(r => r[a.key])).dd);
+  const assetEnd = ASSETS.map(a => full[full.length - 1][a.key] / full[s0][a.key] - 1);
+  const reserveMonths = FD.expenses > 0 ? FD.cash / FD.expenses : Infinity;
+  const required = FD.role === 'retiree' ? 36 : 6;
+  const underMonths = (recIdx >= 0 ? recIdx - ddi.peakIdx : N - ddi.peakIdx) / MONTH_DAYS;
+  let callIdx = -1;
+  if (FD.loan > 0 && V0 > 0) for (let i = 0; i < path.length; i++) if (FD.loan / path[i] >= FD.ltv / 100) { callIdx = i; break; }
+  const peakLTV = FD.loan > 0 && V0 > 0 ? FD.loan / Math.min(...path) : 0;
+  const yes = FD.q.filter(x => x === 'yes').length;
+  const checks = [
+    { title: 'Emergency cash reserve', pass: reserveMonths >= required,
+      detail: `${ok(reserveMonths) ? reserveMonths.toFixed(1) : '∞'} months of living expenses held vs ${required} recommended for ${FD.role === 'retiree' ? 'a retiree (3 years)' : 'someone still working (6 months)'}.` },
+    { title: 'Cash runway through the bear market', pass: reserveMonths >= underMonths,
+      detail: recIdx >= 0
+        ? `Portfolio stays below its pre-crash peak for ${underMonths.toFixed(1)} months; reserve covers ${ok(reserveMonths) ? reserveMonths.toFixed(1) : '∞'}.`
+        : `Portfolio has not regained its peak within the ${(N / MONTH_DAYS).toFixed(1)}-month drill; reserve covers ${ok(reserveMonths) ? reserveMonths.toFixed(1) : '∞'} of ${underMonths.toFixed(1)} months underwater.` },
+    { title: 'Collateral & forced liquidation', pass: callIdx < 0,
+      detail: FD.loan <= 0 ? 'No borrowing entered, so nothing can be force-sold.'
+        : callIdx < 0 ? `Loan-to-value peaks at ${(peakLTV * 100).toFixed(0)}% versus a ${FD.ltv}% call level. No margin call.`
+        : `Margin call on ${full[s0 + callIdx].date} (day ${callIdx}) when the portfolio is down ${fmtPctU(1 - path[callIdx] / V0, 0)}. Forced selling would lock in the loss.` },
+    { title: 'Behavioral pre-screen (3 questions)', pass: yes === 3,
+      detail: yes === 3 ? 'You answered “Yes” to all three.' : `${yes} of 3 answered “Yes”. Unanswered or unsure counts as not ready — revisit these before the money is at risk.` }
+  ];
+  return { sim, vals, path, dd, ddi, recIdx, assetDD, assetEnd, reserveMonths, required, underMonths, callIdx, peakLTV, checks, V0, N, full, s0 };
+}
+function renderDrill() {
+  ensureSim();
+  const st = drillStats(), t = th();
+  const passed = st.checks.filter(c => c.pass).length;
+  const lossEur = st.V0 * st.ddi.dd, trough = st.path[st.ddi.troughIdx];
+  const verdict = passed === st.checks.length ? ['Drill passed', 'positive'] : [`${st.checks.length - passed} finding${st.checks.length - passed > 1 ? 's' : ''} to fix`, 'negative'];
+  $('fd-report').innerHTML = `
+    <div class="verdict"><div><div class="kpi-label">Drill result</div><div class="kpi-value ${verdict[1]}">${verdict[0]}</div><div class="kpi-sub">${passed} of ${st.checks.length} checks passed · ${(PRESETS[FD.preset] || PRESETS.custom).label}</div></div></div>
+    <div class="kpis k4" style="margin:12px 0">
+      ${kpi('Portfolio drawdown', fmtPct(st.ddi.dd), `Trough ${(st.ddi.troughIdx / MONTH_DAYS).toFixed(1)} months in`, 'negative')}
+      ${kpi('Loss on ' + fmtEur0(st.V0), fmtEur0(lossEur), `Value falls to ${fmtEur0(trough)}`, 'negative')}
+      ${kpi('Time underwater', st.recIdx >= 0 ? `${st.underMonths.toFixed(1)} mo` : `> ${st.underMonths.toFixed(0)} mo`, st.recIdx >= 0 ? 'Peak regained' : 'Not recovered in drill', st.recIdx >= 0 ? 'neutral' : 'negative')}
+      ${kpi('Months of expenses lost', FD.expenses > 0 ? (-lossEur / FD.expenses).toFixed(0) : '—', `At ${fmtEur0(FD.expenses)} / month`, 'neutral')}
+    </div>
+    ${st.checks.map(c => `<div class="chk"><span class="badge ${c.pass ? 'pass' : 'fail'}">${c.pass ? 'PASS' : 'FIX'}</span><div><b>${c.title}</b><div class="chk-d">${c.detail}</div></div></div>`).join('')}
+    <div class="note">Method: prices continue from your latest real close; each ETF follows a seeded random path that ends the bottoming phase at its chosen drawdown, with daily volatility scaled up and correlations raised to 0.85 as in real crashes. The realized path wanders, so realized drawdowns differ slightly from targets. Nothing here is a forecast.</div>`;
+
+  const dates = st.full.slice(st.s0).map(r => r.date);
+  const ds = [{ label: 'Portfolio value', data: st.path, borderColor: t.red, backgroundColor: t.red + '22', fill: true, borderWidth: 2, pointRadius: 0, tension: .1 },
+    { label: 'Starting value', data: dates.map(() => st.V0), borderColor: t.muted, borderDash: [5, 4], borderWidth: 1, pointRadius: 0 }];
+  if (FD.loan > 0) ds.push({ label: `Margin-call level (loan ${fmtEur0(FD.loan)} at ${FD.ltv}% LTV)`, data: dates.map(() => FD.loan / (FD.ltv / 100)), borderColor: t.amber, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0 });
+  mk('fd-chart', { type: 'line', data: { labels: dates, datasets: ds }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${fmtEur0(c.parsed.y)}` } } },
+    scales: scales(v => '€' + Number(v).toLocaleString('en-DE', { notation: 'compact' }), { y: { beginAtZero: true } }) } });
+  mk('fd-assets', { type: 'line', data: { labels: dates, datasets: [
+    ...ASSETS.map((a, k) => ({ label: a.short, data: st.full.slice(st.s0).map(r => r[a.key] / st.full[st.s0][a.key] * 100), borderColor: a.color + 'cc', borderWidth: 1.2, pointRadius: 0, tension: .1 })),
+    { label: 'Portfolio', data: st.vals, borderColor: t.text, borderWidth: 2.4, pointRadius: 0, tension: .1 }] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)}` } } }, scales: scales(v => v) } });
+  $('fd-assets-table').innerHTML = `<thead><tr><th>Asset</th><th>Target drawdown</th><th>Realized max DD</th><th>End vs start</th></tr></thead><tbody>${ASSETS.map((a, k) => `<tr><td><i class="swatch" style="background:${a.color};margin-right:8px"></i>${a.short}</td><td>−${FD.dd[k].toFixed(0)}%</td><td class="negative">${fmtPct(st.assetDD[k], 1)}</td><td class="${sgn(st.assetEnd[k])}">${fmtPct(st.assetEnd[k], 1)}</td></tr>`).join('')}
+    <tr class="hl"><td>Portfolio</td><td>—</td><td class="negative">${fmtPct(st.ddi.dd, 1)}</td><td class="${sgn(st.vals[st.vals.length - 1] / 100 - 1)}">${fmtPct(st.vals[st.vals.length - 1] / 100 - 1, 1)}</td></tr></tbody>`;
+}
+function drillChanged() {
+  ensureSim();
+  if (shadow.active) { stopPlay(); shadow.reveal = shadow.sim.length; applyShadow(); }
+  dirty.add('drill'); renderActive();
+}
+function applyPreset(name) {
+  const p = PRESETS[name]; FD.preset = PRESETS[name] ? name : 'custom';
+  if (p && p.dd) { FD.dd = [...p.dd]; FD.bottom = p.bottom; FD.unit = p.unit; FD.rec = p.rec; FD.recTo = p.recTo; FD.shape = p.shape; }
+  syncDrillInputs(); saveDrill(); drillChanged();
+}
+DRILL_FIELDS.forEach(id => { const el = $(id); const h = () => {
+  readDrillInputs();
+  if (SCENARIO_FIELDS.includes(id) && FD.preset !== 'custom') { FD.preset = 'custom'; FD.shape = 1; $('fd-preset').value = 'custom'; }
+  saveDrill(); drillChanged(); };
+  el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', h); });
+$('fd-preset').addEventListener('change', e => applyPreset(e.target.value));
+const reroll = () => { FD.seed = Math.floor(Math.random() * 1e9); saveDrill(); drillChanged(); };
+$('fd-reroll').addEventListener('click', reroll); $('db-reroll').addEventListener('click', reroll);
+$('fd-start').addEventListener('click', toggleDrill); $('btn-drill').addEventListener('click', toggleDrill);
+$('db-exit').addEventListener('click', exitShadow);
+$('db-play').addEventListener('click', () => { if (shadow.timer) stopPlay(); else startPlay(); });
+$('drill-day').addEventListener('input', e => { stopPlay(); shadow.reveal = Math.max(0, Number(e.target.value)); applyShadow(); });
+
+/** Draws a dashed line where the simulated data begins, on charts that share a date axis. */
+const drillMarker = { id: 'drillMarker', afterDatasetsDraw(chart, args, o) {
+  if (!o || o.value == null) return;
+  const x = chart.scales.x.getPixelForValue(o.value), { left, right, top, bottom } = chart.chartArea;
+  if (!Number.isFinite(x) || x < left || x > right) return;
+  const c = chart.ctx; c.save(); c.strokeStyle = cssVar('--amber'); c.lineWidth = 1.2; c.setLineDash([5, 4]); c.beginPath(); c.moveTo(x, top); c.lineTo(x, bottom); c.stroke(); c.setLineDash([]);
+  c.fillStyle = cssVar('--amber'); c.font = '600 11px Inter, system-ui, sans-serif'; c.textAlign = x > right - 110 ? 'right' : 'left'; c.fillText('SIMULATION →', x > right - 110 ? x - 6 : x + 6, top + 12); c.restore();
+} };
+
 /* ===================== Init ===================== */
 async function init() {
   applyChartTheme();
-  loadSettings(); loadGoalSettings(); renderCPPI();
+  loadSettings(); loadGoalSettings(); loadDrill(); syncDrillInputs(); setDrillButtons(); renderCPPI();
   try {
     const [h, d] = await Promise.all([fetch('../history.json?t=' + Date.now()), fetch('../data.json?t=' + Date.now())]);
     if (!h.ok || !d.ok) throw new Error('Data request failed');
     const raw = await h.json(); snapshot = await d.json();
     rows = raw.filter(r => r && r.date && ASSETS.every(a => ok(r[a.key]) && r[a.key] > 0)).sort((a, b) => a.date < b.date ? -1 : 1);
     if (rows.length < 3) throw new Error('Not enough history');
+    realRows = rows.slice(); realSnapshot = snapshot;
     $('sync-status').className = 'sync ok'; $('sync-status').textContent = 'Last sync: ' + snapshot.timestamp;
     const h0 = location.hash.slice(1); if (VIEWS.includes(h0)) { activeView = h0; document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === h0)); document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === h0)); }
     invalidate();
