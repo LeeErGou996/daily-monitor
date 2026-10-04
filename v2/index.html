@@ -622,8 +622,8 @@ function calculateTVM() {
 
   let projDate = new Date(lastHistD.getFullYear(), lastHistD.getMonth()+1, 1);
   while (projDate <= targetD) {
-    const elapsedPeriods = (projDate - effectiveStartD) / 86400000 * (252 / 365.25);
-    const projectedRequired = futureValue(initial, pmt, elapsedPeriods, baseline.rate);
+    const periodsFromLatest = (projDate - lastHistD) / 86400000 * (252 / 365.25);
+    const projectedRequired = futureValue(currentRequired, pmt, periodsFromLatest, baseline.rate);
     requiredPath.push({ x: projDate.getTime(), y: projectedRequired });
     projDate.setMonth(projDate.getMonth()+1);
   }
