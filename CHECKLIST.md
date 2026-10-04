@@ -6,9 +6,10 @@
 - [x] Make the repository root URL redirect to `/v2/`.
 
 ## 2. Overview dashboard
-- [x] Replace three stacked price charts with one normalized comparison chart including the weighted portfolio.
-- [x] Keep compact ETF market cards and show clear last-sync status.
-- [x] Make allocation controls reflect final percentages and persist settings locally.
+- [ ] Keep one normalized comparison chart containing VUAA, XNAS, SEC0, VGWE, and the weighted portfolio.
+- [ ] Keep compact market cards for all four ETFs, including SEC0.DE, and show clear last-sync status.
+- [ ] Use four-fund allocation controls with default weights VUAA 35% / XNAS 35% / SEC0 20% / VGWE 10%, keeping the total at 100% and persisting settings locally.
+- [ ] Backfill SEC0.DE from the portfolio inception date when the stored history does not yet contain the new ticker.
 
 ## 3. CPPI correctness
 - [x] Treat “Current Portfolio Value” as today’s value directly; do not reapply historical portfolio return.
@@ -24,4 +25,4 @@
 - [x] Add responsive layout for narrow screens.
 - [x] Replace “real-time” wording with latest daily market data / last sync.
 - [x] Keep methodology sections collapsed by default.
-- [x] Verify `/legacy/`, `/v2/`, root redirect, data loading, CPPI, TVM, and responsive CSS before publishing. GitHub Pages deployment completed successfully.
+- [ ] Verify SEC0 snapshot data, SEC0 historical backfill, four-asset portfolio calculations, CPPI, TVM, and responsive rendering before publishing.
