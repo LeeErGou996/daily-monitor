@@ -20,9 +20,14 @@
 - [x] Reject start dates after the available market-history range instead of silently using the first row.
 - [x] Detect required-return solutions outside the numerical search interval and report them as out of range.
 - [x] Keep the actual-vs-required path and adaptive CAGR calculation.
+- [ ] Reorganize Goal Projection around four decision variables only: Baseline CAGR, Adaptive CAGR, Funding Ratio, and Path Gap.
+- [ ] Make the current model value and required path value explicit without adding another primary metric.
+- [ ] Persist Goal Projection inputs locally so the planning state survives refresh.
+- [ ] Improve the progress chart labels and currency formatting without changing the underlying projection model.
 
 ## 5. UX and release validation
 - [x] Add responsive layout for narrow screens.
 - [x] Replace “real-time” wording with latest daily market data / last sync.
 - [x] Keep methodology sections collapsed by default.
 - [x] Verify SEC0 snapshot data, SEC0 historical backfill, four-asset portfolio calculations, CPPI, TVM, and responsive rendering before publishing. CI data update and GitHub Pages deployment both passed.
+- [ ] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering.
