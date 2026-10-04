@@ -475,6 +475,7 @@ function setGoalError(message) {
   const status = document.getElementById('tvm-status');
   status.hidden = true;
   status.textContent = '';
+  document.getElementById('tvm-chart-meta').textContent = 'Projection unavailable';
 }
 
 function futureValue(pv, pmt, n, r) {
@@ -615,6 +616,7 @@ function calculateTVM() {
       </div>
       <div class="goal-kpi goal-kpi-wide"><div class="error">${adaptive.message}</div></div>`;
     statusBox.hidden = true;
+    document.getElementById('tvm-chart-meta').textContent = 'Adaptive projection unavailable';
     clearTVMChart();
     return;
   }
