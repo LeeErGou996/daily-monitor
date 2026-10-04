@@ -50,3 +50,9 @@
 - [x] Beta-based stress scenarios and worst realized windows.
 - [x] CPPI historical backtest; Goal Projection model unchanged (output verified identical to v2) plus Monte Carlo goal probability.
 - [x] CSV export and print/PDF.
+
+## 7. v3 Fire Drill / shadow mode (branch `feature/v3-fire-drill-20261005`)
+- [x] Add a Fire Drill page: crash presets (playbook −70%, 2000–02, 2007–09, 2020, 2022, −75% cascade) and a custom scenario (per-ETF drawdown, months/years to bottom, optional recovery, crash volatility).
+- [x] Shadow mode: simulated closes continue from the last real close and replace the data behind every v3 page, with a banner, SIMULATION marker on charts, a day slider, replay, and re-roll.
+- [x] Real data, allocation and saved settings are never modified; leaving shadow mode restores them.
+- [x] Drill report: drawdown, loss in EUR, time underwater, cash-reserve check (6 months / 3 years), margin-call check, three-question behavioral pre-screen.
