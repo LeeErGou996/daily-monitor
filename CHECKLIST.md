@@ -19,11 +19,11 @@
 ## 4. Goal projection correctness
 - [x] Reject start dates after the available market-history range instead of silently using the first row.
 - [x] Detect required-return solutions outside the numerical search interval and report them as out of range.
-- [x] Keep the actual-vs-required path and adaptive CAGR calculation.
-- [ ] Reorganize Goal Projection around four decision variables only: Baseline CAGR, Adaptive CAGR, Funding Ratio, and Path Gap.
-- [ ] Make the current model value and required path value explicit without adding another primary metric.
-- [ ] Persist Goal Projection inputs locally so the planning state survives refresh.
-- [ ] Improve the progress chart labels and currency formatting without changing the underlying projection model.
+- [x] Keep the modeled-vs-required path and adaptive CAGR calculation.
+- [x] Reorganize Goal Projection around four decision variables only: Baseline CAGR, Adaptive CAGR, Funding Ratio, and Path Gap.
+- [x] Make the current model value and required path value explicit without adding another primary metric.
+- [x] Persist Goal Projection inputs locally so the planning state survives refresh.
+- [x] Improve the progress chart labels and currency formatting without changing the underlying projection model.
 
 ## 5. UX and release validation
 - [x] Add responsive layout for narrow screens.
