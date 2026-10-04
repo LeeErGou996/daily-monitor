@@ -4,7 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portfolio Monitor v3 · Pro</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    // Non-blocking Chart.js loader with fallbacks. The page and the landing-page charts never wait for a CDN.
+    window.loadChartLib = function () {
+      return new Promise(function (resolve) {
+        if (window.Chart) return resolve(true);
+        var urls = ['https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js', 'https://unpkg.com/chart.js@4.4.3/dist/chart.umd.min.js'], i = 0;
+        (function next() {
+          if (window.Chart) return resolve(true);
+          if (i >= urls.length) return resolve(false);
+          var s = document.createElement('script'); s.async = true; s.src = urls[i++];
+          var t = setTimeout(function () { s.onload = s.onerror = null; s.remove(); next(); }, 8000);
+          s.onload = function () { clearTimeout(t); resolve(!!window.Chart); };
+          s.onerror = function () { clearTimeout(t); s.remove(); next(); };
+          document.head.appendChild(s);
+        })();
+      });
+    };
+    window.__chartReady = window.loadChartLib();
+  </script>
   <style>
     :root, :root[data-theme="dark"] {
       --bg: #070b14; --bg-2: #0b111e; --panel: #0f1626; --panel-2: #131c30; --border: #1f2a42; --border-2: #2a3856;
@@ -148,6 +166,7 @@
     .legend-inline i { width:10px; height:3px; border-radius:2px; display:inline-block; margin-right:6px; vertical-align:middle; }
     .mobile-nav { display:none; }
 
+    .chart-ph { position:absolute; inset:0; display:grid; place-content:center; justify-items:center; gap:10px; text-align:center; color: var(--muted); font-size:12px; padding:16px; }
     .btn.primary { background: linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; }
     .btn.primary:hover { filter:brightness(1.08); color:#fff; }
     .btn.drill { width:100%; justify-content:center; color: var(--amber); border-color: color-mix(in srgb, var(--amber) 55%, var(--border-2)); background: color-mix(in srgb, var(--amber) 9%, var(--panel)); }
@@ -248,7 +267,7 @@
     <div id="drill-banner" class="drill-banner" hidden>
       <span class="db-badge">FIRE DRILL · 防空演习</span><span class="db-title" id="db-title"></span>
       <div class="db-mid"><input id="drill-day" type="range" min="0" max="1" value="0" aria-label="Drill day"><span id="db-day"></span></div>
-      <div class="head-tools"><button class="btn" id="db-play">▶ Replay</button><button class="btn" id="db-reroll">Re-roll path</button><button class="btn" id="db-exit">Exit drill</button></div>
+      <div class="head-tools"><button class="btn" id="db-play">▶ Replay</button><button class="btn" id="db-restart" title="Restart from day 1">↺ Restart</button><button class="btn" id="db-reroll">Re-roll path</button><button class="btn" id="db-exit">Exit drill</button></div>
       <div class="db-stats" id="db-stats"></div>
     </div>
     <!-- OVERVIEW -->
@@ -546,21 +565,40 @@ const kpi = (label, value, sub, cls = 'neutral', tip = '') =>
 
 /* ===================== Chart helpers ===================== */
 function applyChartTheme() {
+  if (typeof Chart === 'undefined') return;
   const t = th();
   Chart.defaults.color = t.muted;
   Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
   Chart.defaults.font.size = 11;
   Chart.defaults.animation = { duration: 350 };
 }
+let chartState = window.Chart ? 'ready' : 'loading';
+function chartPlaceholder(el) {
+  const wrap = el.parentElement; if (!wrap) return;
+  let ph = wrap.querySelector('.chart-ph'); if (!ph) { ph = document.createElement('div'); ph.className = 'chart-ph'; wrap.appendChild(ph); }
+  ph.innerHTML = chartState === 'failed'
+    ? '<div>Chart library could not be loaded (network or content blocker).<br>All numbers on this page are still correct.</div><button class="btn" type="button">Retry</button>'
+    : '<div>Loading chart…</div>';
+  const b = ph.querySelector('button'); if (b) b.onclick = () => { chartState = 'loading'; document.querySelectorAll('.chart-ph').forEach(x => x.innerHTML = '<div>Loading chart…</div>'); window.__chartReady = window.loadChartLib(); window.__chartReady.then(onChartLib); };
+}
+function onChartLib(okLib) {
+  chartState = okLib ? 'ready' : 'failed';
+  if (okLib) { applyChartTheme(); document.querySelectorAll('.chart-ph').forEach(x => x.remove()); }
+  else document.querySelectorAll('canvas').forEach(c => { if (!lineCharts[c.id] && c.parentElement && !c.parentElement.querySelector('.chart-ph')) chartPlaceholder(c); else if (!lineCharts[c.id]) chartPlaceholder(c); });
+  if (rows.length) { VIEWS.forEach(v => dirty.add(v)); renderActive(); }
+}
 function mk(id, cfg) {
   if (charts[id]) { charts[id].destroy(); delete charts[id]; }
   const el = $(id); if (!el) return null;
+  if (typeof Chart === 'undefined') { chartPlaceholder(el); return null; }
+  const oldPh = el.parentElement && el.parentElement.querySelector('.chart-ph'); if (oldPh) oldPh.remove();
   if (typeof shadow !== 'undefined' && shadow.active && shadow.sim.length && cfg.options) {
     const xs = cfg.options.scales && cfg.options.scales.x; let v = null;
     if (xs && xs.type === 'linear') v = new Date(shadow.sim[0].date + 'T00:00:00').getTime();
     else if (Array.isArray(cfg.data.labels)) { const i = cfg.data.labels.indexOf(shadow.sim[0].date); v = i >= 0 ? i : null; }
     if (v != null) { cfg.plugins = (cfg.plugins || []).concat([drillMarker]); cfg.options.plugins = cfg.options.plugins || {}; cfg.options.plugins.drillMarker = { value: v }; }
   }
+  if (typeof shadow !== 'undefined' && shadow.timer && cfg.options) cfg.options.animation = false;   // no re-animation on every replay tick
   charts[id] = new Chart(el, cfg);
   return charts[id];
 }
@@ -787,6 +825,146 @@ function exportCSV() {
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+/* ===================== Dependency-free line chart =====================
+   Used for the landing-page charts so they never depend on a third-party CDN.
+   Canvas is absolutely positioned inside a fixed-height wrapper, so resizing can never feed back into layout. */
+class LineChart {
+  constructor(canvas) {
+    this.c = canvas; this.ctx = canvas.getContext('2d'); this.cfg = null; this.hidden = new Set(); this.hoverIdx = null; this.legendRects = []; this.raf = 0; this.geo = null;
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;';
+    canvas.setAttribute('role', 'img');
+    this.ro = new ResizeObserver(() => this.schedule());
+    this.ro.observe(canvas.parentElement);
+    const pos = e => { const r = canvas.getBoundingClientRect(); const p = e.touches ? e.touches[0] : e; return { x: p.clientX - r.left, y: p.clientY - r.top }; };
+    const move = e => { const { x } = pos(e); this.setHover(this.idxAt(x)); };
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('touchstart', move, { passive: true });
+    canvas.addEventListener('touchmove', move, { passive: true });
+    canvas.addEventListener('mouseleave', () => this.setHover(null));
+    canvas.addEventListener('touchend', () => this.setHover(null));
+    canvas.addEventListener('click', e => {
+      const { x, y } = pos(e);
+      const hit = this.legendRects.find(r => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h);
+      if (hit) { if (this.hidden.has(hit.i)) this.hidden.delete(hit.i); else if (this.hidden.size < this.cfg.series.length - 1) this.hidden.add(hit.i); this.schedule(); }
+    });
+  }
+  set(cfg) { this.cfg = cfg; this.c.setAttribute('aria-label', cfg.title || 'Line chart'); if (this.hoverIdx != null && this.hoverIdx >= cfg.labels.length) this.hoverIdx = null; this.schedule(); }
+  setHover(i) { if (i !== this.hoverIdx) { this.hoverIdx = i; this.schedule(); } }
+  idxAt(x) {
+    const g = this.geo; if (!g || g.n < 2) return null;
+    if (x < g.left - 4 || x > g.right + 4) return null;
+    return Math.max(0, Math.min(g.n - 1, Math.round((x - g.left) / (g.right - g.left) * (g.n - 1))));
+  }
+  schedule() { if (this.raf) return; this.raf = requestAnimationFrame(() => { this.raf = 0; try { this.draw(); } catch (e) { console.error('LineChart draw failed', e); } }); }
+  destroy() { this.ro.disconnect(); cancelAnimationFrame(this.raf); }
+  draw() {
+    const cfg = this.cfg, cv = this.c, parent = cv.parentElement;
+    if (!cfg || !parent) return;
+    const W = parent.clientWidth, H = parent.clientHeight;
+    if (W < 40 || H < 40) return;                          // hidden view: the ResizeObserver redraws when it becomes visible
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    const ctx = this.ctx; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    const t = th(), font = '11px Inter, ui-sans-serif, system-ui, sans-serif';
+    const labels = cfg.labels, n = labels.length, log = !!cfg.log;
+    const L = 8, R = 54, T = 30, B = 24, left = L, right = W - R, top = T, bottom = H - B;
+    this.geo = { left, right, top, bottom, n };
+    const vis = cfg.series.map((s, i) => i).filter(i => !this.hidden.has(i));
+    // y range from visible series
+    let lo = Infinity, hi = -Infinity;
+    vis.forEach(i => cfg.series[i].data.forEach(v => { if (Number.isFinite(v) && (!log || v > 0)) { if (v < lo) lo = v; if (v > hi) hi = v; } }));
+    if (cfg.yFixed) { lo = cfg.yFixed.lo; hi = cfg.yFixed.hi; }
+    if (cfg.yMax != null) hi = Math.max(hi, cfg.yMax);
+    if (cfg.yMin != null) lo = Math.min(lo, cfg.yMin);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || n < 2) { ctx.fillStyle = t.muted; ctx.font = font; ctx.textAlign = 'center'; ctx.fillText('No data for this window', W / 2, H / 2); return; }
+    if (hi === lo) { hi += 1; lo -= 1; }
+    let ticks, yv, y0, y1;
+    if (log) {
+      const pad = Math.pow(hi / lo, 0.04); y0 = Math.log(lo / pad); y1 = Math.log(hi * pad);
+      ticks = []; const a = Math.floor(Math.log10(Math.exp(y0))), b = Math.ceil(Math.log10(Math.exp(y1)));
+      for (let e = a; e <= b; e++) [1, 2, 3, 5, 7].forEach(m => { const v = m * Math.pow(10, e); if (Math.log(v) >= y0 && Math.log(v) <= y1) ticks.push(v); });
+      while (ticks.length > 8) ticks = ticks.filter((_, i) => i % 2 === 0);
+      yv = v => bottom - (Math.log(v) - y0) / (y1 - y0) * (bottom - top);
+    } else {
+      const pad = (hi - lo) * 0.06; let a = lo - pad, b = hi + pad;
+      if (cfg.yMax != null && hi <= cfg.yMax + 1e-9) b = cfg.yMax;
+      const raw = (b - a) / 6, mag = Math.pow(10, Math.floor(Math.log10(raw))), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || raw;
+      a = Math.floor(a / step) * step; b = Math.ceil(b / step) * step; if (cfg.yMax != null && hi <= cfg.yMax + 1e-9) b = cfg.yMax;
+      ticks = []; for (let v = a; v <= b + step * 0.001; v += step) ticks.push(+v.toFixed(10));
+      y0 = a; y1 = b; yv = v => bottom - (v - y0) / (y1 - y0) * (bottom - top);
+    }
+    const xv = i => left + i / (n - 1) * (right - left);
+    // grid + y labels
+    ctx.font = font; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.lineWidth = 1;
+    ticks.forEach(v => { const y = yv(v); if (y < top - 1 || y > bottom + 1) return; ctx.strokeStyle = t.grid; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke(); ctx.fillStyle = t.muted; ctx.fillText((cfg.yFmt || (x => x))(v), right + 8, y); });
+    // x labels
+    ctx.textBaseline = 'top'; ctx.fillStyle = t.muted;
+    const nt = Math.max(2, Math.min(8, Math.floor((right - left) / 118)));
+    for (let k = 0; k < nt; k++) { const i = Math.round(k / (nt - 1) * (n - 1)); ctx.textAlign = k === 0 ? 'left' : k === nt - 1 ? 'right' : 'center'; ctx.fillText(labels[i], xv(i), bottom + 7); }
+    // series
+    ctx.save(); ctx.beginPath(); ctx.rect(left - 2, top - 2, right - left + 4, bottom - top + 4); ctx.clip();
+    vis.forEach(i => {
+      const s = cfg.series[i], d = s.data;
+      const trace = () => { let started = false; ctx.beginPath(); for (let j = 0; j < n; j++) { const v = d[j]; if (!Number.isFinite(v) || (log && v <= 0)) { started = false; continue; } const x = xv(j), y = yv(v); if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y); } };
+      if (s.fillTo != null) {
+        const base = yv(s.fillTo); ctx.beginPath(); let first = -1, lastJ = -1;
+        for (let j = 0; j < n; j++) { if (!Number.isFinite(d[j])) continue; if (first < 0) { first = j; ctx.moveTo(xv(j), base); } ctx.lineTo(xv(j), yv(d[j])); lastJ = j; }
+        if (first >= 0) { ctx.lineTo(xv(lastJ), base); ctx.closePath(); ctx.fillStyle = s.color + '2e'; ctx.fill(); }
+      }
+      trace(); ctx.strokeStyle = s.color; ctx.lineWidth = s.width || 1.5; ctx.lineJoin = 'round'; ctx.setLineDash(s.dash || []); ctx.stroke(); ctx.setLineDash([]);
+    });
+    ctx.restore();
+    // marker (e.g. where simulated data begins)
+    if (cfg.marker && cfg.marker.index >= 0 && cfg.marker.index < n) {
+      const x = xv(cfg.marker.index); ctx.strokeStyle = cssVar('--amber'); ctx.lineWidth = 1.2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = cssVar('--amber'); ctx.font = '600 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'top'; const right_ = x > right - 120; ctx.textAlign = right_ ? 'right' : 'left'; ctx.fillText(cfg.marker.label || '', right_ ? x - 6 : x + 6, top + 4);
+    }
+    // legend (click to toggle)
+    this.legendRects = []; ctx.font = font; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    let lx = left, ly = 12;
+    cfg.series.forEach((s, i) => {
+      const w = ctx.measureText(s.label).width + 34, off = this.hidden.has(i);
+      if (lx + w > W - 6) { lx = left; ly += 16; }
+      ctx.globalAlpha = off ? 0.35 : 1; ctx.strokeStyle = s.color; ctx.lineWidth = Math.max(2, s.width || 2); ctx.setLineDash(s.dash || []); ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 18, ly); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = t.text2; ctx.fillText(s.label, lx + 24, ly); ctx.globalAlpha = 1;
+      this.legendRects.push({ i, x: lx - 2, y: ly - 8, w: w, h: 16 }); lx += w + 6;
+    });
+    // hover
+    const hi_ = this.hoverIdx;
+    if (hi_ != null && hi_ >= 0 && hi_ < n) {
+      const x = xv(hi_); ctx.strokeStyle = t.muted; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke(); ctx.setLineDash([]);
+      const rowsT = []; vis.forEach(i => { const s = cfg.series[i], v = s.data[hi_]; if (Number.isFinite(v)) { ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(x, yv(v), 3.2, 0, Math.PI * 2); ctx.fill(); rowsT.push({ c: s.color, t: `${s.label}  ${(cfg.valFmt || (q => q.toFixed(2)))(v)}` }); } });
+      if (rowsT.length) { ctx.font = font; const tw = Math.max(ctx.measureText(labels[hi_]).width, ...rowsT.map(r => ctx.measureText(r.t).width + 16)) + 20, th_ = 22 + rowsT.length * 16;
+      let bx = x + 12; if (bx + tw > W - 4) bx = x - 12 - tw; bx = Math.max(4, bx); const by = Math.max(top, Math.min(bottom - th_, top + 6));
+      ctx.fillStyle = cssVar('--panel-2'); ctx.strokeStyle = cssVar('--border-2'); ctx.lineWidth = 1; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx, by, tw, th_, 8) : ctx.rect(bx, by, tw, th_); ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = t.text; ctx.fillText(labels[hi_], bx + 10, by + 12);
+      rowsT.forEach((r, k) => { const yy = by + 28 + k * 16; ctx.fillStyle = r.c; ctx.fillRect(bx + 10, yy - 3, 6, 6); ctx.fillStyle = t.text2; ctx.fillText(r.t, bx + 22, yy); }); }
+    }
+  }
+}
+const lineCharts = {};
+function lineChart(id, cfg) {
+  const el = $(id); if (!el) return null;
+  if (!lineCharts[id] || lineCharts[id].c !== el) { if (lineCharts[id]) lineCharts[id].destroy(); lineCharts[id] = new LineChart(el); }
+  if (typeof shadow !== 'undefined' && shadow.active && shadow.sim.length) { const i = cfg.labels.indexOf(shadow.sim[0].date); if (i >= 0) cfg.marker = { index: i, label: 'SIMULATION →' }; }
+  lineCharts[id].set(cfg); return lineCharts[id];
+}
+
+/** In shadow mode the axes cover the whole drill, so replay only appends new points instead of rescaling the chart. */
+function fullTimeline(rollN) {
+  if (typeof shadow === 'undefined' || !shadow.active || !shadow.sim.length) return null;
+  const key = JSON.stringify([C.start, wv(), S.reb, S.cost, S.bench, S.rf, shadow.key, rollN]);
+  if (shadow.fullKey === key) return shadow.fullData;
+  const full = realRows.concat(shadow.sim), R = full.slice(C.start), w = wv();
+  const assetVals = ASSETS.map(a => R.map(r => r[a.key] / R[0][a.key] * 100));
+  const sim = simulate(C.start, w, S.reb, S.cost, undefined, full);
+  const bRets = toReturns(assetVals[C.bi]), pm = metrics(sim.vals, S.rf / 100, bRets);
+  const fd = { labels: R.map(r => r.date), assetVals, port: sim.vals, dd: (pm.dd || []).map(v => v * 100), bdd: drawdownSeries(assetVals[C.bi]).map(v => v * 100),
+    rv: rolling(pm.rets, rollN, r => std(r) * Math.sqrt(TD) * 100), bv: rolling(bRets, rollN, r => std(r) * Math.sqrt(TD) * 100) };
+  shadow.fullKey = key; shadow.fullData = fd; return fd;
+}
+const spanOf = (arrs, log) => { let lo = Infinity, hi = -Infinity; arrs.forEach(a => a.forEach(v => { if (Number.isFinite(v) && (!log || v > 0)) { if (v < lo) lo = v; if (v > hi) hi = v; } })); return Number.isFinite(lo) ? { lo, hi } : null; };
+
 /* ===================== Overview ===================== */
 function sparkSVG(vals, color) {
   const clean = vals.filter(ok); if (clean.length < 2) return '';
@@ -824,15 +1002,17 @@ function renderOverview() {
     }).join('');
   }
 
-  // Chart
-  const ds = [
-    ...ASSETS.map((a, k) => ({ label: a.short, data: C.assetVals[k], borderColor: a.color + 'cc', borderWidth: 1.3, pointRadius: 0, tension: .15 })),
-    { label: 'Portfolio', data: C.sim.vals, borderColor: t.text, borderWidth: 2.6, pointRadius: 0, tension: .15 }
-  ];
-  mk('overview-chart', { type: 'line', data: { labels: C.dates, datasets: ds }, options: {
-    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } },
-    scales: scales(v => v, { y: { type: S.scale === 'log' ? 'logarithmic' : 'linear' } }) } });
+  // Chart (dependency-free renderer: always available, no CDN)
+  const rollN = Math.max(5, Math.min(20, Math.floor(C.n / 4)));
+  const FT = fullTimeline(rollN);
+  const padTo = arr => FT ? arr.concat(new Array(Math.max(0, FT.labels.length - arr.length)).fill(null)) : arr;
+  const labelsAll = FT ? FT.labels : C.dates;
+  lineChart('overview-chart', { title: 'Normalized performance, window start = 100', labels: labelsAll, log: S.scale === 'log',
+    yFixed: FT ? spanOf([...FT.assetVals, FT.port], S.scale === 'log') : null,
+    series: [
+      ...ASSETS.map((a, k) => ({ label: a.short, color: a.color, width: 1.3, data: padTo(C.assetVals[k]) })),
+      { label: 'Portfolio', color: t.text, width: 2.6, data: padTo(C.sim.vals) }],
+    yFmt: v => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)), valFmt: v => v.toFixed(2) });
 
   // Asset table
   const rowsHTML = ASSETS.map((a, k) => {
@@ -846,24 +1026,17 @@ function renderOverview() {
   // Drawdown chart
   const bdd = drawdownSeries(C.assetVals[C.bi]);
   $('dd-meta').textContent = `Max ${fmtPct(pm.maxDD)}${pm.ddInfo && pm.maxDD < 0 ? ` · ${C.dates[pm.ddInfo.peakIdx]} → ${C.dates[pm.ddInfo.troughIdx]}` : ''}`;
-  mk('dd-chart', { type: 'line', data: { labels: C.dates, datasets: [
-    { label: 'Portfolio', data: (pm.dd || []).map(v => v * 100), borderColor: t.red, backgroundColor: t.red + '30', fill: true, borderWidth: 1.8, pointRadius: 0, tension: .1 },
-    { label: ASSETS[C.bi].short, data: bdd.map(v => v * 100), borderColor: t.muted, borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0, tension: .1 }
-  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } } },
-    scales: scales(v => v + '%', { y: { max: 0 } }) } });
+  lineChart('dd-chart', { title: 'Drawdown', labels: labelsAll, yMax: 0, yFixed: FT ? (() => { const r = spanOf([FT.dd, FT.bdd]); return r && { lo: r.lo, hi: 0 }; })() : null, yFmt: v => v.toFixed(0) + '%', valFmt: v => v.toFixed(2) + '%',
+    series: [{ label: 'Portfolio', color: t.red, width: 1.8, fillTo: 0, data: padTo((pm.dd || []).map(v => v * 100)) },
+      { label: ASSETS[C.bi].short, color: t.muted, width: 1.2, dash: [5, 4], data: padTo(bdd.map(v => v * 100)) }] });
 
   // Rolling vol
-  const N = Math.max(5, Math.min(20, Math.floor(C.n / 4)));
+  const N = rollN;
   $('roll-n').textContent = N;
   const rv = rolling(pm.rets, N, r => std(r) * Math.sqrt(TD) * 100);
   const bv = rolling(C.assetRets[C.bi], N, r => std(r) * Math.sqrt(TD) * 100);
-  mk('roll-chart', { type: 'line', data: { labels: C.dates, datasets: [
-    { label: 'Portfolio', data: rv, borderColor: t.accent, borderWidth: 2, pointRadius: 0, tension: .2, spanGaps: false },
-    { label: ASSETS[C.bi].short, data: bv, borderColor: t.muted, borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0, tension: .2, spanGaps: false }
-  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => c.parsed.y == null ? '' : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
-    scales: scales(v => v + '%') } });
+  lineChart('roll-chart', { title: 'Rolling volatility', labels: labelsAll, yFixed: FT ? spanOf([FT.rv, FT.bv]) : null, yFmt: v => v.toFixed(0) + '%', valFmt: v => v.toFixed(1) + '%',
+    series: [{ label: 'Portfolio', color: t.accent, width: 2, data: padTo(rv) }, { label: ASSETS[C.bi].short, color: t.muted, width: 1.2, dash: [5, 4], data: padTo(bv) }] });
 }
 
 /* ===================== Risk & Analytics ===================== */
@@ -1397,13 +1570,18 @@ function toggleDrill() {
   if (shadow.active) { exitShadow(); return; }
   enterShadow(); switchView('overview');
 }
-function stopPlay() { if (shadow.timer) { clearInterval(shadow.timer); shadow.timer = null; } const b = $('db-play'); if (b) b.textContent = '▶ Replay'; }
-function startPlay() {
-  stopPlay();
+function updatePlayLabel() {
+  const b = $('db-play'); if (!b) return; const N = shadow.sim.length;
+  b.textContent = shadow.timer ? '❚❚ Pause' : (shadow.reveal > 0 && shadow.reveal < N ? '▶ Resume' : '▶ Replay');
+}
+function stopPlay() { if (shadow.timer) { clearInterval(shadow.timer); shadow.timer = null; } updatePlayLabel(); }
+function startPlay(fromStart) {
+  if (shadow.timer) { clearInterval(shadow.timer); shadow.timer = null; }
   const N = shadow.sim.length; if (!N) return;
-  shadow.reveal = 1; $('db-play').textContent = '❚❚ Pause'; applyShadow();
+  if (fromStart || shadow.reveal >= N || shadow.reveal < 1) shadow.reveal = 1;   // otherwise resume where we paused
   const step = Math.max(1, Math.ceil(N / 120));
   shadow.timer = setInterval(() => { shadow.reveal = Math.min(N, shadow.reveal + step); applyShadow(); if (shadow.reveal >= N) stopPlay(); }, 140);
+  applyShadow();
 }
 function updateBanner() {
   const N = shadow.sim.length, k = shadow.reveal, sl = $('drill-day');
@@ -1411,6 +1589,7 @@ function updateBanner() {
   const d = k ? shadow.sim[k - 1].date : realRows[realRows.length - 1].date;
   $('db-title').textContent = (PRESETS[FD.preset] || PRESETS.custom).label;
   const mo = k / MONTH_DAYS;
+  updatePlayLabel();
   $('db-day').textContent = `Day ${k} / ${N} · ${d} · ${mo < 24 ? mo.toFixed(1) + ' mo' : (mo / 12).toFixed(1) + ' yr'}`;
   if (k > 0) {
     const full = realRows.concat(shadow.sim.slice(0, k));
@@ -1503,8 +1682,9 @@ const reroll = () => { FD.seed = Math.floor(Math.random() * 1e9); saveDrill(); d
 $('fd-reroll').addEventListener('click', reroll); $('db-reroll').addEventListener('click', reroll);
 $('fd-start').addEventListener('click', toggleDrill); $('btn-drill').addEventListener('click', toggleDrill);
 $('db-exit').addEventListener('click', exitShadow);
-$('db-play').addEventListener('click', () => { if (shadow.timer) stopPlay(); else startPlay(); });
-$('drill-day').addEventListener('input', e => { stopPlay(); shadow.reveal = Math.max(0, Number(e.target.value)); applyShadow(); });
+$('db-play').addEventListener('click', () => { if (shadow.timer) stopPlay(); else startPlay(false); });
+$('db-restart').addEventListener('click', () => startPlay(true));
+$('drill-day').addEventListener('input', e => { stopPlay(); shadow.reveal = Math.max(0, Number(e.target.value)); applyShadow(); });   // dragging pauses; the button then offers Resume
 
 /** Draws a dashed line where the simulated data begins, on charts that share a date axis. */
 const drillMarker = { id: 'drillMarker', afterDatasetsDraw(chart, args, o) {
@@ -1517,7 +1697,7 @@ const drillMarker = { id: 'drillMarker', afterDatasetsDraw(chart, args, o) {
 
 /* ===================== Init ===================== */
 async function init() {
-  applyChartTheme();
+  applyChartTheme(); window.__chartReady.then(onChartLib);
   loadSettings(); loadGoalSettings(); loadDrill(); syncDrillInputs(); setDrillButtons(); renderCPPI();
   try {
     const [h, d] = await Promise.all([fetch('../history.json?t=' + Date.now()), fetch('../data.json?t=' + Date.now())]);
