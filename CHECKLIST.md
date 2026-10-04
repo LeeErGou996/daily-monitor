@@ -30,4 +30,4 @@
 - [x] Replace “real-time” wording with latest daily market data / last sync.
 - [x] Keep methodology sections collapsed by default.
 - [x] Verify SEC0 snapshot data, SEC0 historical backfill, four-asset portfolio calculations, CPPI, TVM, and responsive rendering before publishing. CI data update and GitHub Pages deployment both passed.
-- [ ] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering.
+- [x] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering. Default-parameter regression passed and GitHub Pages build/deploy completed successfully.
