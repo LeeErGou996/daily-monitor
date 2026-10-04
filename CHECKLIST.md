@@ -24,9 +24,9 @@
 - [x] Make the current model value and required path value explicit without adding another primary metric.
 - [x] Persist Goal Projection inputs locally so the planning state survives refresh.
 - [x] Improve the progress chart labels and currency formatting without changing the underlying projection model.
-- [ ] Plot Goal Projection on a proportional time axis so daily historical observations and monthly forward points use their true calendar spacing.
-- [ ] Mark the boundary between recorded market history and forward required-path projection.
-- [ ] Explain negative required CAGR as a contribution-versus-target condition without changing the solver.
+- [x] Plot Goal Projection on a proportional time axis so daily historical observations and monthly forward points use their true calendar spacing.
+- [x] Mark the boundary between recorded market history and forward required-path projection.
+- [x] Explain negative required CAGR as a contribution-versus-target condition without changing the solver.
 
 ## 5. UX and release validation
 - [x] Add responsive layout for narrow screens.
