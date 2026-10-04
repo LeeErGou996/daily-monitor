@@ -64,7 +64,7 @@ def fetch_data():
     # 正常情况下仍只做增量更新，避免每次重复下载全部历史。
     missing_tickers = [
         ticker for ticker in CORE_PAIRS
-        if existing_history and not any(ticker in item for item in existing_history)
+        if existing_history and not any(item.get(ticker) is not None for item in existing_history)
     ]
     needs_full_backfill = bool(missing_tickers)
 
@@ -100,6 +100,13 @@ def fetch_data():
                 history_list = existing_history
             else:
                 hist_close = hist_data["Close"]
+                unavailable_tickers = [
+                    ticker for ticker in CORE_PAIRS
+                    if ticker not in hist_close.columns or hist_close[ticker].dropna().empty
+                ]
+                if unavailable_tickers:
+                    raise RuntimeError(f"缺少有效历史价格: {unavailable_tickers}")
+
                 downloaded_history = []
                 for date, row in hist_close.iterrows():
                     day_data = {"date": date.strftime('%Y-%m-%d')}
