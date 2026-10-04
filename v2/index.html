@@ -234,7 +234,7 @@
           <div class="input-block"><label for="tvm-start">Start month</label><input id="tvm-start" type="month" value="2026-01"></div>
           <div class="input-block"><label for="tvm-target-date">Target month</label><input id="tvm-target-date" type="month" value="2051-01"></div>
           <div class="input-block"><label for="tvm-initial">Initial capital (€)</label><input id="tvm-initial" type="number" min="0" value="1000" step="100"></div>
-          <div class="input-block"><label for="tvm-daily">Daily DCA (€)</label><input id="tvm-daily" type="number" min="0" value="20" step="1"></div>
+          <div class="input-block"><label for="tvm-daily">Daily DCA (€ / calendar day)</label><input id="tvm-daily" type="number" min="0" value="20" step="1"></div>
           <div class="input-block"><label for="tvm-target">Target wealth (€)</label><input id="tvm-target" type="number" min="1" value="500000" step="5000"></div>
         </div>
       </div>
@@ -250,7 +250,7 @@
         <div class="chart-wrap"><canvas id="tvm-chart"></canvas></div>
         <details>
           <summary>Methodology and limitation</summary>
-          <p>Baseline CAGR is the return originally required from the selected start point. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. A negative required CAGR means the planned contributions alone are sufficient to exceed the target at a 0% return. Horizontal chart spacing is proportional to calendar time, and the vertical marker separates recorded market history from the forward required path. Historical values use recorded daily closes, so the modeled portfolio is not the same as a live brokerage balance.</p>
+          <p>Daily DCA is interpreted as a contribution on every calendar day, including weekends and holidays. Because ETF prices are unavailable on non-trading days, those contributions accumulate and are invested at the next available market close in the historical replay. Baseline CAGR is the return originally required from the selected start point, annualized on a 365.25-day calendar basis. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. A negative required CAGR means the planned contributions alone are sufficient to exceed the target at a 0% return. Historical values use recorded closes, so the modeled portfolio is not the same as a live brokerage balance.</p>
         </details>
       </div>
     </section>
@@ -274,8 +274,9 @@ const GOAL_STORAGE_KEY = 'portfolio-monitor-goal-v1';
 
 const fmtPct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 const fmtEur = v => new Intl.NumberFormat('en-DE', { style:'currency', currency:'EUR', maximumFractionDigits:2 }).format(v);
-const annualToDaily = a => Math.pow(1 + a, 1 / 252) - 1;
-const dailyToAnnual = d => Math.pow(1 + d, 252) - 1;
+const CALENDAR_DAYS_PER_YEAR = 365.25;
+const annualToDaily = a => Math.pow(1 + a, 1 / CALENDAR_DAYS_PER_YEAR) - 1;
+const dailyToAnnual = d => Math.pow(1 + d, CALENDAR_DAYS_PER_YEAR) - 1;
 
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === name));
@@ -552,7 +553,7 @@ function calculateTVM() {
   if (startD < firstHistD) startIndex = 0;
 
   const effectiveStartD = new Date(historyData[startIndex].date + 'T00:00:00');
-  const totalPeriods = (targetD - effectiveStartD) / 86400000 * (252 / 365.25);
+  const totalPeriods = (targetD - effectiveStartD) / 86400000;
   const baseline = solveRequiredDailyRate(initial, pmt, totalPeriods, target);
   if (!baseline.ok) {
     setGoalError(baseline.message);
@@ -577,27 +578,34 @@ function calculateTVM() {
   const modeledPath = [];
   const requiredPath = [];
 
+  let previousMarketDate = effectiveStartD;
   for (let i=startIndex; i<historyData.length; i++) {
     const d = historyData[i];
     if (!TICKERS.every(t => Number.isFinite(d[t.key]) && d[t.key] > 0)) continue;
+
+    const marketDate = new Date(d.date + 'T00:00:00');
     if (i > startIndex) {
-      shares.vuaa += pmt * (weights.vuaa/100) / d['VUAA.DE'];
-      shares.xnas += pmt * (weights.xnas/100) / d['XNAS.DE'];
-      shares.sec0 += pmt * (weights.sec0/100) / d['SEC0.DE'];
-      shares.vgwe += pmt * (weights.vgwe/100) / d['VGWE.DE'];
-      requiredValue = requiredValue * (1 + baseline.rate) + pmt;
+      const calendarDays = Math.max(1, Math.round((marketDate - previousMarketDate) / 86400000));
+      const contribution = pmt * calendarDays;
+      shares.vuaa += contribution * (weights.vuaa/100) / d['VUAA.DE'];
+      shares.xnas += contribution * (weights.xnas/100) / d['XNAS.DE'];
+      shares.sec0 += contribution * (weights.sec0/100) / d['SEC0.DE'];
+      shares.vgwe += contribution * (weights.vgwe/100) / d['VGWE.DE'];
+      requiredValue = futureValue(requiredValue, pmt, calendarDays, baseline.rate);
     }
+
     const modeled = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.sec0*d['SEC0.DE'] + shares.vgwe*d['VGWE.DE'];
-    const timestamp = new Date(d.date + 'T00:00:00').getTime();
+    const timestamp = marketDate.getTime();
     modeledPath.push({ x: timestamp, y: modeled });
     requiredPath.push({ x: timestamp, y: requiredValue });
+    previousMarketDate = marketDate;
   }
 
   const currentModeled = modeledPath[modeledPath.length-1].y;
   const currentRequired = requiredPath[requiredPath.length-1].y;
   const fundingRatio = currentRequired > 0 ? currentModeled/currentRequired*100 : 0;
   const pathGap = currentModeled - currentRequired;
-  const periodsLeft = (targetD - lastHistD) / 86400000 * (252 / 365.25);
+  const periodsLeft = (targetD - lastHistD) / 86400000;
   const adaptive = solveRequiredDailyRate(currentModeled, pmt, periodsLeft, target);
 
   if (!adaptive.ok) {
@@ -622,7 +630,7 @@ function calculateTVM() {
 
   let projDate = new Date(lastHistD.getFullYear(), lastHistD.getMonth()+1, 1);
   while (projDate <= targetD) {
-    const periodsFromLatest = (projDate - lastHistD) / 86400000 * (252 / 365.25);
+    const periodsFromLatest = (projDate - lastHistD) / 86400000;
     const projectedRequired = futureValue(currentRequired, pmt, periodsFromLatest, baseline.rate);
     requiredPath.push({ x: projDate.getTime(), y: projectedRequired });
     projDate.setMonth(projDate.getMonth()+1);
@@ -655,7 +663,7 @@ function calculateTVM() {
     <div class="goal-kpi">
       <div class="goal-kpi-label">Baseline CAGR</div>
       <div class="goal-kpi-value">${baselineCAGR.toFixed(2)}%</div>
-      <div class="goal-kpi-sub">${baselineCAGR < 0 ? 'Contributions alone exceed the selected target.' : 'Original required annual return.'}</div>
+      <div class="goal-kpi-sub">${baselineCAGR < 0 ? 'Calendar-day contributions alone exceed the selected target.' : 'Original required annual return.'}</div>
     </div>`;
 
   const gapText = pathGap >= 0
@@ -668,7 +676,7 @@ function calculateTVM() {
       : 'The required CAGR is unchanged from baseline.';
 
   const contributionText = baselineCAGR < 0
-    ? ` At a 0% return, the planned contributions would reach about <strong>${fmtEur(zeroReturnTarget)}</strong> by the target date, above the <strong>${fmtEur(target)}</strong> goal. The negative required CAGR therefore indicates excess contribution capacity, not an expected market loss.`
+    ? ` At a 0% return, contributing <strong>${fmtEur(pmt)} per calendar day</strong> would reach about <strong>${fmtEur(zeroReturnTarget)}</strong> by the target date, above the <strong>${fmtEur(target)}</strong> goal. The negative required CAGR therefore indicates excess contribution capacity, not an expected market loss.`
     : '';
   statusBox.innerHTML = `The modeled portfolio is ${gapText}. ${rateText}${contributionText}`;
   statusBox.hidden = false;
