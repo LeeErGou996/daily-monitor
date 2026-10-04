@@ -34,4 +34,4 @@
 - [x] Keep methodology sections collapsed by default.
 - [x] Verify SEC0 snapshot data, SEC0 historical backfill, four-asset portfolio calculations, CPPI, TVM, and responsive rendering before publishing. CI data update and GitHub Pages deployment both passed.
 - [x] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering. Default-parameter regression passed and GitHub Pages build/deploy completed successfully.
-- [ ] Verify proportional date spacing, latest-data boundary marker, negative-CAGR explanation, and unchanged numerical outputs before publishing.
+- [x] Verify proportional date spacing, latest-data boundary marker, negative-CAGR explanation, and unchanged numerical outputs before publishing. Screenshot configuration regression passed and GitHub Pages build/deploy completed successfully.
