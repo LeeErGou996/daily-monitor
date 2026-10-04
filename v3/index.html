@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio Monitor v3 · Pro</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root, :root[data-theme="dark"] {
+      --bg: #070b14; --bg-2: #0b111e; --panel: #0f1626; --panel-2: #131c30; --border: #1f2a42; --border-2: #2a3856;
+      --text: #e8ecf5; --text-2: #b6c0d6; --muted: #7d8aa6;
+      --accent: #5b9dff; --accent-2: #8b7bff; --green: #2fd39a; --red: #ff6b7a; --amber: #f5b942; --cyan: #38bdf8; --purple: #b794f6;
+      --grid: rgba(125,138,166,.12); --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.28);
+      --heat-pos: 47,211,154; --heat-neg: 255,107,122;
+      --sidebar: 252px;
+    }
+    :root[data-theme="light"] {
+      --bg: #f3f5fa; --bg-2: #ffffff; --panel: #ffffff; --panel-2: #f6f8fc; --border: #e1e6f0; --border-2: #cfd7e6;
+      --text: #121a2c; --text-2: #3b4760; --muted: #6b7792;
+      --accent: #2563eb; --accent-2: #6d5dfc; --green: #0f9d6e; --red: #dc3b4f; --amber: #c98a0b; --cyan: #0284c7; --purple: #7c4dcc;
+      --grid: rgba(60,80,120,.10); --shadow: 0 1px 2px rgba(20,30,60,.06), 0 6px 18px rgba(20,30,60,.05);
+      --heat-pos: 15,157,110; --heat-neg: 220,59,79;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin:0; min-height:100vh; background: var(--bg); color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background: radial-gradient(900px 420px at 85% -10%, rgba(91,157,255,.10), transparent 60%), radial-gradient(700px 380px at 5% 110%, rgba(139,123,255,.07), transparent 60%); }
+    :root[data-theme="light"] body::before { opacity:.5; }
+    button, input, select { font: inherit; color: inherit; }
+    .app { position:relative; z-index:1; min-height:100vh; display:grid; grid-template-columns: var(--sidebar) minmax(0,1fr); }
+
+    /* Sidebar */
+    .sidebar { position:sticky; top:0; height:100vh; overflow-y:auto; background: var(--bg-2); border-right:1px solid var(--border); padding:22px 16px; display:flex; flex-direction:column; gap:20px; }
+    .brand { display:flex; align-items:center; gap:10px; padding:0 6px; }
+    .logo { width:30px; height:30px; border-radius:9px; background: linear-gradient(135deg,var(--accent),var(--accent-2)); display:grid; place-items:center; box-shadow:0 4px 14px rgba(91,157,255,.35); }
+    .logo svg { width:17px; height:17px; }
+    .brand-text { font-weight:700; letter-spacing:.06em; font-size:13px; line-height:1.15; }
+    .brand-text small { display:block; font-weight:500; letter-spacing:.02em; color: var(--muted); font-size:10.5px; margin-top:2px; }
+    .pill { display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.08em; padding:2px 6px; border-radius:99px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); margin-left:4px; vertical-align:1px; }
+    .nav { display:grid; gap:3px; }
+    .nav button, .nav a { display:flex; align-items:center; gap:10px; width:100%; border:0; background:transparent; color: var(--muted); text-align:left; border-radius:9px; padding:9px 10px; cursor:pointer; text-decoration:none; font-size:13px; font-weight:500; transition:.15s; }
+    .nav svg { width:16px; height:16px; flex:none; opacity:.85; }
+    .nav button:hover, .nav a:hover { color: var(--text); background: var(--panel-2); }
+    .nav button.active { color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+    .nav .sep { height:1px; background: var(--border); margin:6px 4px; }
+    .side-block { border-top:1px solid var(--border); padding-top:16px; }
+    .kicker { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color: var(--muted); font-weight:600; margin:0 4px 10px; display:flex; justify-content:space-between; align-items:center; }
+    .weight-row { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12px; margin:10px 4px 4px; color: var(--text-2); }
+    .weight-row .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:7px; }
+    .weight-row strong { color: var(--text); }
+    input[type=range] { width:100%; accent-color: var(--accent); height:4px; }
+    .derived { margin:12px 4px 0; padding:9px 10px; border:1px dashed var(--border-2); border-radius:9px; font-size:12px; color: var(--muted); display:flex; justify-content:space-between; }
+    .side-field { margin:0 4px 10px; }
+    .side-foot { margin-top:auto; display:flex; gap:8px; padding:0 4px; }
+
+    /* Main */
+    .main { min-width:0; padding:26px 30px 40px; }
+    .view { display:none; max-width:1240px; margin:0 auto; animation: fade .25s ease; }
+    .view.active { display:block; }
+    @keyframes fade { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:none;} }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; margin-bottom:18px; flex-wrap:wrap; }
+    h1 { font-size:24px; margin:0 0 5px; letter-spacing:-.02em; font-weight:700; }
+    .subtitle { margin:0; color: var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+    .head-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .sync { font-size:12px; color: var(--muted); display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid var(--border); border-radius:99px; background: var(--panel); }
+    .sync::before { content:""; width:7px; height:7px; border-radius:50%; background: var(--muted); }
+    .sync.ok::before { background: var(--green); box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+    .sync.err::before { background: var(--red); }
+    .seg { display:inline-flex; background: var(--panel); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
+    .seg button { border:0; background:transparent; color: var(--muted); padding:5px 11px; border-radius:7px; cursor:pointer; font-size:12px; font-weight:600; }
+    .seg button:hover { color: var(--text); }
+    .seg button.active { background: var(--panel-2); color: var(--text); box-shadow:0 0 0 1px var(--border-2); }
+    .btn { border:1px solid var(--border-2); background: var(--panel); color: var(--text-2); padding:7px 12px; border-radius:9px; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; gap:7px; align-items:center; }
+    .btn:hover { color: var(--text); border-color: var(--accent); }
+    .btn svg { width:14px; height:14px; }
+    .icon-btn { width:34px; height:34px; padding:0; justify-content:center; }
+
+    .card, .panel { background: var(--panel); border:1px solid var(--border); border-radius:14px; box-shadow: var(--shadow); }
+    .panel { padding:18px; margin-bottom:14px; }
+    .panel-title { display:flex; justify-content:space-between; gap:14px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    .panel-title h2 { margin:0; font-size:14px; font-weight:650; letter-spacing:-.005em; }
+    .panel-title .meta { font-size:11.5px; color: var(--muted); }
+    .kpis { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .kpis.k4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .kpi { padding:14px 14px 13px; position:relative; overflow:hidden; }
+    .kpi-label { font-size:11px; color: var(--muted); margin-bottom:7px; display:flex; justify-content:space-between; gap:6px; font-weight:500; }
+    .kpi-value { font-size:21px; font-weight:700; letter-spacing:-.02em; }
+    .kpi-sub { margin-top:5px; font-size:11px; color: var(--muted); line-height:1.4; }
+    .positive { color: var(--green); } .negative { color: var(--red); } .neutral { color: var(--text); }
+    .tip { cursor:help; color: var(--muted); font-size:10px; border:1px solid var(--border-2); border-radius:50%; width:14px; height:14px; display:inline-grid; place-items:center; flex:none; }
+
+    .market-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+    .asset { padding:14px; }
+    .asset-top { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .asset-name { font-size:13px; font-weight:600; line-height:1.3; }
+    .asset-ticker { color: var(--muted); font-size:11px; margin-top:2px; display:flex; align-items:center; gap:6px; }
+    .swatch { width:8px; height:8px; border-radius:2px; display:inline-block; }
+    .asset-weight { font-size:11px; color: var(--text-2); background: var(--panel-2); border:1px solid var(--border); padding:2px 7px; border-radius:99px; white-space:nowrap; }
+    .asset-price { margin-top:12px; font-size:19px; font-weight:700; letter-spacing:-.01em; }
+    .asset-change { margin-top:3px; font-size:12px; font-weight:500; }
+    .asset-foot { display:flex; justify-content:space-between; font-size:11px; color: var(--muted); margin-top:8px; }
+    .spark { width:100%; height:34px; margin-top:10px; display:block; }
+
+    .grid-2>*, .grid-21>*, .grid-12>*, .form-grid>*, .form-row>* { min-width:0; }
+    .grid-2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+    .grid-21 { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:14px; }
+    .grid-12 { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:14px; }
+    .chart-wrap { height:340px; position:relative; }
+    .chart-wrap.sm { height:240px; } .chart-wrap.md { height:290px; }
+    table.t { width:100%; border-collapse:collapse; font-size:12.5px; }
+    table.t th { text-align:right; font-weight:600; color: var(--muted); font-size:11px; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    table.t th:first-child, table.t td:first-child { text-align:left; }
+    table.t td { text-align:right; padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    table.t tr:last-child td { border-bottom:0; }
+    table.t tr.hl td { background: color-mix(in srgb, var(--accent) 7%, transparent); font-weight:600; }
+    .tbl-scroll { overflow-x:auto; }
+    .heat { display:grid; gap:3px; }
+    .heat-cell { padding:9px 6px; border-radius:6px; text-align:center; font-size:12px; font-weight:600; min-width:0; }
+    .heat-head { color: var(--muted); font-size:11px; text-align:center; padding:4px 0; font-weight:600; }
+    .heat-rowlabel { color: var(--text-2); font-size:12px; font-weight:600; display:flex; align-items:center; }
+    .bar { height:7px; border-radius:99px; background: var(--panel-2); overflow:hidden; border:1px solid var(--border); }
+    .bar > div { height:100%; background: linear-gradient(90deg,var(--accent),var(--accent-2)); }
+    .rc-row { display:grid; grid-template-columns:70px 1fr 96px; gap:12px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+    .rc-row:last-child { border-bottom:0; }
+    .form-grid { display:grid; gap:12px; }
+    .form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+    label { display:block; font-size:11px; color: var(--muted); margin-bottom:6px; font-weight:500; }
+    input[type=number], input[type=month], input[type=text], select { width:100%; border:1px solid var(--border-2); background: var(--panel-2); color: var(--text); border-radius:9px; padding:9px 10px; outline:none; }
+    input:focus, select:focus { border-color: var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+    .result-row { display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .result-row:last-child { border-bottom:0; }
+    .result-label { color: var(--muted); font-size:12px; } .result-value { font-weight:650; text-align:right; }
+    .status { margin-top:10px; border-radius:10px; padding:11px 13px; font-size:12px; line-height:1.55; border:1px solid var(--border); background: var(--panel-2); color: var(--text-2); }
+    .status strong { color: var(--text); }
+    .note { font-size:11.5px; color: var(--muted); line-height:1.6; margin-top:10px; }
+    .error { color: var(--red); font-size:12px; line-height:1.5; }
+    .warn { border:1px solid color-mix(in srgb, var(--amber) 40%, var(--border)); background: color-mix(in srgb, var(--amber) 8%, transparent); color: var(--text-2); border-radius:10px; padding:10px 13px; font-size:12px; line-height:1.5; margin-bottom:14px; }
+    .warn strong { color: var(--amber); }
+    details { border-top:1px solid var(--border); margin-top:14px; padding-top:12px; }
+    summary { cursor:pointer; color: var(--muted); font-size:12px; font-weight:500; }
+    details p, details li { color: var(--muted); font-size:12px; line-height:1.7; max-width:900px; }
+    .footer { color: var(--muted); font-size:11px; margin-top:22px; line-height:1.6; }
+    .footer a, .note a { color: var(--accent); }
+    .legend-inline { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color: var(--text-2); }
+    .legend-inline i { width:10px; height:3px; border-radius:2px; display:inline-block; margin-right:6px; vertical-align:middle; }
+    .mobile-nav { display:none; }
+
+    @media (max-width: 1100px) { .kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .market-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .grid-21, .grid-12 { grid-template-columns:minmax(0,1fr); } }
+    @media (max-width: 900px) {
+      .app { grid-template-columns:minmax(0,1fr); }
+      .sidebar { position:static; height:auto; border-right:0; border-bottom:1px solid var(--border); padding:12px 14px; gap:12px; }
+      .sidebar .nav { grid-template-columns:repeat(4,minmax(0,1fr)); } .sidebar .nav button, .sidebar .nav a { justify-content:center; padding:9px 6px; font-size:12px; } .sidebar .nav svg, .nav .sep { display:none; }
+      .nav { overflow-x:auto; } .side-foot { margin-top:0; }
+      .main { padding:18px 12px 30px; } .grid-2 { grid-template-columns:minmax(0,1fr); }
+    }
+    @media (max-width: 600px) {
+      .kpis, .kpis.k4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .market-grid { grid-template-columns:1fr; }
+      .sidebar .nav { grid-template-columns:repeat(3,minmax(0,1fr)); } h1 { font-size:20px; } .chart-wrap { height:280px; } .kpi-value { font-size:18px; }
+    }
+    @media print {
+      .sidebar, .head-tools .btn, .seg, .nav { display:none !important; } .app { display:block; } body { background:#fff; color:#000; }
+      .view { display:block !important; page-break-after:always; } .card, .panel { box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 8-9"/><path d="M15 5h5v5"/></svg></div>
+      <div class="brand-text">PORTFOLIO MONITOR<span class="pill">V3 PRO</span><small>Multi-asset ETF risk desk</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</button>
+      <button data-view="risk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z"/></svg>Risk &amp; Analytics</button>
+      <button data-view="returns"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Returns Calendar</button>
+      <button data-view="rebalance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13l-3-3M20 17H7l3 3"/></svg>Rebalance</button>
+      <button data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>Stress Test</button>
+      <button data-view="cppi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>CPPI</button>
+      <button data-view="tvm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>Goal Projection</button>
+      <div class="sep"></div>
+      <a href="../v2/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19l-7-7 7-7M3 12h18"/></svg>Previous v2</a>
+      <a href="../legacy/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Legacy</a>
+    </nav>
+
+    <section class="side-block">
+      <div class="kicker"><span>Target allocation</span><button class="btn" id="btn-reset-w" style="padding:2px 8px;font-size:10px">Reset</button></div>
+      <div class="weight-row"><span><i class="dot" style="background:#5b9dff"></i>VUAA</span><strong id="vuaa-label">35%</strong></div>
+      <input id="w-vuaa" type="range" min="0" max="100" value="35">
+      <div class="weight-row"><span><i class="dot" style="background:#2fd39a"></i>XNAS</span><strong id="xnas-label">35%</strong></div>
+      <input id="w-xnas" type="range" min="0" max="100" value="35">
+      <div class="weight-row"><span><i class="dot" style="background:#b794f6"></i>SEC0</span><strong id="sec0-label">20%</strong></div>
+      <input id="w-sec0" type="range" min="0" max="100" value="20">
+      <div class="derived"><span><i class="dot" style="background:#f5b942;width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px"></i>VGWE remainder</span><strong id="vgwe-label">10%</strong></div>
+    </section>
+
+    <section class="side-block">
+      <div class="kicker"><span>Assumptions</span></div>
+      <div class="side-field"><label for="a-rf">Risk-free rate (% p.a.)</label><input id="a-rf" type="number" step="0.1" value="2.0"></div>
+      <div class="side-field"><label for="a-bench">Benchmark</label>
+        <select id="a-bench"><option value="VUAA.DE">S&amp;P 500 (VUAA)</option><option value="XNAS.DE">Nasdaq-100 (XNAS)</option><option value="VGWE.DE">Global high dividend (VGWE)</option><option value="SEC0.DE">Semiconductors (SEC0)</option></select></div>
+      <div class="side-field"><label for="a-reb">Portfolio rebalancing</label>
+        <select id="a-reb"><option value="none">None (buy &amp; hold)</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="weekly">Weekly</option><option value="daily">Daily</option></select></div>
+      <div class="side-field"><label for="a-cost">Trading cost (bps per trade)</label><input id="a-cost" type="number" step="1" min="0" value="5"></div>
+    </section>
+
+    <div class="side-foot">
+      <button class="btn" id="btn-theme" title="Toggle light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>Theme</button>
+      <button class="btn" id="btn-export" title="Download analysis as CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>CSV</button>
+      <button class="btn" id="btn-print" title="Print / save as PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>PDF</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- OVERVIEW -->
+    <section id="overview" class="view active">
+      <div class="page-head">
+        <div>
+          <h1>Portfolio Overview</h1>
+          <p class="subtitle">Daily-close performance, risk and attribution for your four-ETF portfolio. All metrics follow the selected window, allocation and assumptions.</p>
+        </div>
+        <div class="head-tools">
+          <div class="seg" id="range-seg">
+            <button data-range="1M">1M</button><button data-range="3M">3M</button><button data-range="6M">6M</button><button data-range="YTD">YTD</button><button data-range="ALL" class="active">ALL</button>
+          </div>
+          <div id="sync-status" class="sync">Loading data…</div>
+        </div>
+      </div>
+      <div id="short-warn" class="warn" hidden></div>
+      <div class="kpis" id="kpis"></div>
+      <div id="market-grid" class="market-grid"></div>
+      <div class="grid-21">
+        <div class="panel">
+          <div class="panel-title"><h2>Normalized performance</h2>
+            <div class="head-tools"><div class="seg" id="scale-seg"><button data-scale="linear" class="active">Linear</button><button data-scale="log">Log</button></div><span class="meta">Window start = 100</span></div></div>
+          <div class="chart-wrap"><canvas id="overview-chart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><h2>Asset performance</h2><span class="meta">selected window</span></div>
+          <div class="tbl-scroll"><table class="t" id="asset-table"></table></div>
+          <div class="note" id="attrib-note"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Drawdown</h2><span class="meta" id="dd-meta">Underwater curve</span></div><div class="chart-wrap md"><canvas id="dd-chart"></canvas></div></div>
+        <div class="panel"><div class="panel-title"><h2>Rolling volatility</h2><span class="meta">annualized · <span id="roll-n">20</span>d</span></div><div class="chart-wrap md"><canvas id="roll-chart"></canvas></div></div>
+      </div>
+      <div class="footer">Prices are daily closes (XETRA, EUR) refreshed by the repository workflow — not a live exchange feed. Past performance is not indicative of future results. For informational use only; not investment advice.</div>
+    </section>
+
+    <!-- RISK -->
+    <section id="risk" class="view">
+      <div class="page-head"><div><h1>Risk &amp; Analytics</h1><p class="subtitle">Risk-adjusted performance, tail risk, diversification and benchmark-relative statistics for the selected window.</p></div></div>
+      <div class="kpis k4" id="risk-kpis"></div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Statistics by asset</h2><span class="meta">annualized from daily closes</span></div><div class="tbl-scroll"><table class="t" id="risk-table"></table></div></div>
+        <div class="panel"><div class="panel-title"><h2>Correlation matrix</h2><span class="meta">daily returns</span></div><div id="corr" class="heat"></div><div class="note" id="corr-note"></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Risk contribution</h2><span class="meta">share of portfolio variance vs. weight</span></div><div id="rc"></div><div class="note" id="rc-note"></div></div>
+        <div class="panel"><div class="panel-title"><h2>Daily return distribution</h2><span class="meta" id="hist-meta"></span></div><div class="chart-wrap sm"><canvas id="hist-chart"></canvas></div></div>
+      </div>
+      <div class="panel"><div class="panel-title"><h2>Rolling beta &amp; correlation vs benchmark</h2><span class="meta">60-observation window</span></div><div class="chart-wrap md"><canvas id="beta-chart"></canvas></div></div>
+      <details style="border:0;padding:0;margin:0 0 10px"><summary>Definitions</summary><ul>
+        <li><b>Ann. return</b>: geometric, (V<sub>end</sub>/V<sub>0</sub>)<sup>252/n</sup>−1; extrapolated when the window is shorter than one year.</li>
+        <li><b>Sharpe</b>: mean daily excess return over the risk-free rate ÷ σ × √252. <b>Sortino</b> uses downside deviation versus the risk-free rate.</li>
+        <li><b>VaR / CVaR (95%)</b>: historical one-day loss at the 5th percentile and the mean loss beyond it.</li>
+        <li><b>Calmar</b>: annualized return ÷ |max drawdown|. <b>Beta/Alpha</b>: OLS of daily excess returns versus the benchmark; alpha annualized. <b>TE</b>: tracking error = σ of active returns × √252; <b>IR</b> = active return ÷ TE.</li>
+        <li><b>Risk contribution</b>: w<sub>i</sub>(Σw)<sub>i</sub> / w′Σw using the sample covariance matrix and current target weights.</li></ul></details>
+    </section>
+
+    <!-- RETURNS CALENDAR -->
+    <section id="returns" class="view">
+      <div class="page-head"><div><h1>Returns Calendar</h1><p class="subtitle">Monthly return heatmap, best and worst periods, and daily return statistics, based on month-end and daily closes.</p></div>
+        <div class="head-tools"><select id="cal-asset" style="width:auto"></select></div></div>
+      <div class="panel"><div class="panel-title"><h2>Monthly returns</h2><span class="meta" id="cal-meta"></span></div><div id="cal-heat"></div></div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Best &amp; worst periods</h2><span class="meta">portfolio</span></div><div class="tbl-scroll"><table class="t" id="extremes"></table></div></div>
+        <div class="panel"><div class="panel-title"><h2>Return statistics</h2><span class="meta">portfolio · daily</span></div><div id="ret-stats"></div></div>
+      </div>
+    </section>
+
+    <!-- REBALANCE -->
+    <section id="rebalance" class="view">
+      <div class="page-head"><div><h1>Rebalance &amp; Position Sizing</h1><p class="subtitle">See how far each position has drifted from target, generate a trade list in euros and shares, and compare rebalancing policies net of trading costs.</p></div></div>
+      <div class="grid-12">
+        <div class="panel">
+          <div class="panel-title"><h2>Trade planner</h2><span class="meta">uses latest close</span></div>
+          <div class="form-row">
+            <div><label for="rb-value">Portfolio value (€)</label><input id="rb-value" type="number" min="0" step="100" value="10000"></div>
+            <div><label for="rb-band">Drift tolerance (± pp)</label><input id="rb-band" type="number" min="0" step="0.5" value="5"></div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div><label for="rb-start">Holdings basis</label><select id="rb-start"><option value="drift">Drifted from window start (buy &amp; hold)</option><option value="manual">Enter current € values</option></select></div>
+            <div><label for="rb-whole">Share lots</label><select id="rb-whole"><option value="frac">Fractional (savings plan)</option><option value="whole">Whole shares</option></select></div>
+          </div>
+          <div id="rb-manual" class="form-row" style="margin-top:12px" hidden></div>
+          <div id="rb-summary" class="status"></div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>Current vs target</h2><span class="meta" id="rb-meta"></span></div><div class="tbl-scroll"><table class="t" id="rb-table"></table></div><div class="note" id="rb-note"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><h2>Rebalancing policy comparison</h2><span class="meta">same target weights · selected window · costs from sidebar</span></div>
+        <div class="chart-wrap md"><canvas id="rb-chart"></canvas></div><div class="tbl-scroll" style="margin-top:12px"><table class="t" id="rb-policy"></table></div>
+        <div class="note">Turnover is cumulative one-way turnover as a share of portfolio value. Cost drag is the total trading cost deducted from portfolio value. Taxes and bid-ask spreads beyond the bps input are not modeled.</div>
+      </div>
+    </section>
+
+    <!-- STRESS -->
+    <section id="stress" class="view">
+      <div class="page-head"><div><h1>Stress Test &amp; Scenarios</h1><p class="subtitle">Beta-based market shocks, custom asset shocks and the worst realized windows in your history.</p></div></div>
+      <div class="grid-12">
+        <div class="panel">
+          <div class="panel-title"><h2>Scenario builder</h2><span class="meta">shock is applied to the S&amp;P 500 and transmitted via beta</span></div>
+          <div class="form-grid">
+            <div><label for="st-shock">Equity market shock: <b id="st-shock-label">−20%</b></label><input id="st-shock" type="range" min="-50" max="30" step="1" value="-20"></div>
+            <div class="form-row">
+              <div><label for="st-value">Portfolio value (€)</label><input id="st-value" type="number" min="0" step="100" value="10000"></div>
+              <div><label for="st-semi">Extra semiconductor shock (pp)</label><input id="st-semi" type="number" step="1" value="0"></div>
+            </div>
+            <div class="seg" id="st-presets" style="flex-wrap:wrap"><button data-s="-10">−10%</button><button data-s="-20" class="active">−20%</button><button data-s="-30">−30%</button><button data-s="-40">−40%</button><button data-s="10">+10%</button></div>
+          </div>
+          <div id="st-summary" class="status"></div>
+        </div>
+        <div class="panel"><div class="panel-title"><h2>Impact by asset</h2><span class="meta">β to S&amp;P 500 over the full history</span></div><div class="tbl-scroll"><table class="t" id="st-table"></table></div><div class="note">Betas are estimated from daily returns and are unstable over short samples; treat results as indicative. Correlations rise in crises, so real drawdowns can exceed these linear estimates.</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title"><h2>Scenario ladder</h2><span class="meta">portfolio impact, €</span></div><div class="chart-wrap sm"><canvas id="st-chart"></canvas></div></div>
+        <div class="panel"><div class="panel-title"><h2>Worst realized windows</h2><span class="meta">portfolio, full history</span></div><div class="tbl-scroll"><table class="t" id="st-worst"></table></div></div>
+      </div>
+    </section>
+
+    <!-- CPPI -->
+    <section id="cppi" class="view">
+      <div class="page-head"><div><h1>CPPI Allocation &amp; Backtest</h1><p class="subtitle">Current-state allocation calculator, plus a historical CPPI backtest on your portfolio with cash earning the risk-free rate.</p></div></div>
+      <div class="grid-12">
+        <div class="panel"><div class="panel-title"><h2>Allocation calculator</h2></div>
+          <div class="form-grid">
+            <div><label for="cppi-value">Current portfolio value (€)</label><input id="cppi-value" type="number" min="0" value="1000" step="100"></div>
+            <div class="form-row"><div><label for="cppi-floor">Floor level (%)</label><input id="cppi-floor" type="number" min="0" max="100" value="85" step="1"></div>
+              <div><label for="cppi-m">Multiplier (m)</label><input id="cppi-m" type="number" min="0" value="4" step="0.1"></div></div>
+          </div>
+          <div id="cppi-results" style="margin-top:12px"></div></div>
+        <div class="panel"><div class="panel-title"><h2>Historical backtest</h2><span class="meta" id="cppi-bt-meta"></span></div>
+          <div class="chart-wrap md"><canvas id="cppi-chart"></canvas></div><div class="tbl-scroll"><table class="t" id="cppi-bt-table" style="margin-top:8px"></table></div></div>
+      </div>
+      <div class="panel"><details style="border:0;margin:0;padding:0"><summary>Methodology and limitation</summary>
+        <p>CPPI sets equity exposure from the cushion: C = V − F and E = min(V, m × C), with no leverage. Allocation calculator uses the value you enter directly. The backtest starts from the full history, applies the exposure rule at each daily close to the portfolio's return series, grows the floor at the risk-free rate, charges the trading cost on every change in equity exposure, and holds the remainder in cash at the risk-free rate. It is an allocation rule, not a guarantee: gap risk, discrete rebalancing, costs and execution delays can push realized value through the floor.</p></details></div>
+    </section>
+
+    <!-- GOAL -->
+    <section id="tvm" class="view">
+      <div class="page-head"><div><h1>Goal Projection</h1><p class="subtitle">Track the modeled portfolio against the wealth path required to reach your target, then stress the plan with a Monte Carlo simulation.</p></div></div>
+      <div class="panel"><div class="panel-title"><h2>Plan inputs</h2><span class="meta">Saved automatically in this browser</span></div>
+        <div class="form-row" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+          <div><label for="tvm-start">Start month</label><input id="tvm-start" type="month" value="2026-01"></div>
+          <div><label for="tvm-target-date">Target month</label><input id="tvm-target-date" type="month" value="2051-01"></div>
+          <div><label for="tvm-initial">Initial capital (€)</label><input id="tvm-initial" type="number" min="0" value="1000" step="100"></div>
+          <div><label for="tvm-daily">Daily DCA (€ / calendar day)</label><input id="tvm-daily" type="number" min="0" value="20" step="1"></div>
+          <div><label for="tvm-target">Target wealth (€)</label><input id="tvm-target" type="number" min="1" value="500000" step="5000"></div>
+        </div></div>
+      <div id="tvm-results" class="kpis k4"></div>
+      <div id="tvm-status" class="status" hidden></div>
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-title"><h2>Progress vs required path</h2><span id="tvm-chart-meta" class="meta">Recorded closes + forward required path</span></div>
+        <div class="chart-wrap"><canvas id="tvm-chart"></canvas></div>
+        <details><summary>Methodology and limitation</summary>
+          <p>Daily DCA is interpreted as a contribution on every calendar day, including weekends and holidays. Because ETF prices are unavailable on non-trading days, those contributions accumulate and are invested at the next available market close in the historical replay. Baseline CAGR is the return originally required from the selected start point, annualized on a 365.25-day calendar basis. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. A negative required CAGR means the planned contributions alone are sufficient to exceed the target at a 0% return. Historical values use recorded closes, so the modeled portfolio is not the same as a live brokerage balance.</p></details>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><h2>Monte Carlo: probability of reaching the goal</h2><span class="meta">3,000 paths · lognormal monthly steps · fixed seed</span></div>
+        <div class="form-row" style="margin-bottom:12px">
+          <div><label for="mc-mu">Expected return (% p.a.)</label><input id="mc-mu" type="number" step="0.5" value="7"></div>
+          <div><label for="mc-vol">Volatility (% p.a.)</label><input id="mc-vol" type="number" step="0.5" min="0" value="16"></div>
+          <div><label>&nbsp;</label><button class="btn" id="mc-use-hist" style="width:100%;justify-content:center">Use realized volatility</button></div>
+        </div>
+        <div id="mc-kpis" class="kpis k4"></div>
+        <div class="chart-wrap md"><canvas id="mc-chart"></canvas></div>
+        <div class="note">Starts from the latest modeled portfolio value (from the replay above), contributes the daily DCA every calendar day, and draws log-normal monthly returns with the expected return and volatility you enter. The default 7% / 16% is a long-run equity assumption; the sample volatility is measured over a short window and is a poor guide to the future. Not a forecast.</div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+'use strict';
+/* ===================== Config & state ===================== */
+const ASSETS = [
+  { key:'VUAA.DE', short:'VUAA', wk:'vuaa', color:'#5b9dff', label:'S&P 500' },
+  { key:'XNAS.DE', short:'XNAS', wk:'xnas', color:'#2fd39a', label:'Nasdaq-100' },
+  { key:'SEC0.DE', short:'SEC0', wk:'sec0', color:'#b794f6', label:'Semiconductors' },
+  { key:'VGWE.DE', short:'VGWE', wk:'vgwe', color:'#f5b942', label:'Global high dividend' }
+];
+const DEFAULT_WEIGHTS = { vuaa:35, xnas:35, sec0:20, vgwe:10 };
+const WEIGHT_KEY = 'portfolio-monitor-v2-sec0';      // shared with v2 so allocation carries over
+const GOAL_STORAGE_KEY = 'portfolio-monitor-goal-v1'; // shared with v2
+const SETTINGS_KEY = 'portfolio-monitor-v3-settings';
+const MC_KEY = 'portfolio-monitor-v3-mc';
+const THEME_KEY = 'portfolio-monitor-v3-theme';
+const TD = 252;                      // trading days per year for risk statistics
+const CALENDAR_DAYS_PER_YEAR = 365.25;
+const VIEWS = ['overview','risk','returns','rebalance','stress','cppi','tvm'];
+
+let rows = [];            // clean daily history
+let snapshot = null;
+let weights = { ...DEFAULT_WEIGHTS };
+let S = { range:'ALL', scale:'linear', rf:2.0, bench:'VUAA.DE', reb:'none', cost:5 };
+let C = null;             // computed context for current state
+let activeView = 'overview';
+const dirty = new Set(VIEWS);
+const charts = {};
+
+/* ===================== Helpers ===================== */
+const $ = id => document.getElementById(id);
+const sum = a => a.reduce((s, v) => s + v, 0);
+const mean = a => a.length ? sum(a) / a.length : NaN;
+const std = a => { if (a.length < 2) return NaN; const m = mean(a); return Math.sqrt(sum(a.map(v => (v - m) ** 2)) / (a.length - 1)); };
+const cov = (a, b) => { const n = Math.min(a.length, b.length); if (n < 2) return NaN; const ma = mean(a.slice(0, n)), mb = mean(b.slice(0, n)); let s = 0; for (let i = 0; i < n; i++) s += (a[i] - ma) * (b[i] - mb); return s / (n - 1); };
+const corr = (a, b) => cov(a, b) / (std(a) * std(b));
+const pctile = (sorted, p) => { if (!sorted.length) return NaN; const i = (sorted.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i); return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo); };
+const skew = a => { const n = a.length; if (n < 3) return NaN; const m = mean(a), s = std(a); return (n / ((n - 1) * (n - 2))) * sum(a.map(v => ((v - m) / s) ** 3)); };
+const exKurt = a => { const n = a.length; if (n < 4) return NaN; const m = mean(a), s = std(a); const k = sum(a.map(v => ((v - m) / s) ** 4)); return (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * k - 3 * (n - 1) ** 2 / ((n - 2) * (n - 3)); };
+const ok = Number.isFinite;
+const fmtPct = (v, d = 2) => ok(v) ? `${v >= 0 ? '+' : ''}${(v * 100).toFixed(d)}%` : '—';
+const fmtPctU = (v, d = 2) => ok(v) ? `${(v * 100).toFixed(d)}%` : '—';
+const fmtNum = (v, d = 2) => ok(v) ? v.toFixed(d) : '—';
+const fmtEur = v => ok(v) ? new Intl.NumberFormat('en-DE', { style:'currency', currency:'EUR', maximumFractionDigits:2 }).format(v) : '—';
+const fmtEur0 = v => ok(v) ? new Intl.NumberFormat('en-DE', { style:'currency', currency:'EUR', maximumFractionDigits:0 }).format(v) : '—';
+const sgn = v => !ok(v) ? 'neutral' : v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const th = () => ({ text:cssVar('--text'), text2:cssVar('--text-2'), muted:cssVar('--muted'), grid:cssVar('--grid'), accent:cssVar('--accent'), green:cssVar('--green'), red:cssVar('--red'), amber:cssVar('--amber'), purple:cssVar('--purple'), cyan:cssVar('--cyan'), panel:cssVar('--panel') });
+const annualToDaily = a => Math.pow(1 + a, 1 / CALENDAR_DAYS_PER_YEAR) - 1;
+const dailyToAnnual = d => Math.pow(1 + d, CALENDAR_DAYS_PER_YEAR) - 1;
+const calendarDaysBetween = (start, end) => {
+  const s = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.max(0, Math.round((e - s) / 86400000));
+};
+const safeStore = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
+};
+const wv = () => ASSETS.map(a => weights[a.wk] / 100);
+const kpi = (label, value, sub, cls = 'neutral', tip = '') =>
+  `<div class="card kpi"><div class="kpi-label"><span>${label}</span>${tip ? `<span class="tip" title="${tip}">?</span>` : ''}</div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${sub || ''}</div></div>`;
+
+/* ===================== Chart helpers ===================== */
+function applyChartTheme() {
+  const t = th();
+  Chart.defaults.color = t.muted;
+  Chart.defaults.font.family = 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.animation = { duration: 350 };
+}
+function mk(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const el = $(id); if (!el) return null;
+  charts[id] = new Chart(el, cfg);
+  return charts[id];
+}
+function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function tooltipStyle() {
+  const t = th();
+  return { backgroundColor: cssVar('--panel-2'), titleColor: t.text, bodyColor: t.text2, borderColor: cssVar('--border-2'), borderWidth: 1, padding: 10, boxPadding: 4 };
+}
+function scales(yFmt, o = {}) {
+  const t = th();
+  return {
+    x: { type: o.xType || 'category', grid: { display: false }, ticks: { color: t.muted, maxTicksLimit: 8, maxRotation: 0 }, ...(o.x || {}) },
+    y: { position: 'right', grid: { color: t.grid }, border: { display: false }, ticks: { color: t.muted, callback: yFmt }, ...(o.y || {}) }
+  };
+}
+const legendOpts = () => ({ labels: { color: th().text2, boxWidth: 12, boxHeight: 3, usePointStyle: false } });
+
+/* ===================== Portfolio engine ===================== */
+function rangeStart() {
+  const n = rows.length; if (!n) return 0;
+  switch (S.range) {
+    case '1M': return Math.max(0, n - 1 - 21);
+    case '3M': return Math.max(0, n - 1 - 63);
+    case '6M': return Math.max(0, n - 1 - 126);
+    case 'YTD': {
+      const y = rows[n - 1].date.slice(0, 4);
+      const first = rows.findIndex(r => r.date.slice(0, 4) === y);
+      return first > 0 ? first - 1 : 0;
+    }
+    default: return 0;
+  }
+}
+function isRebalanceDay(prev, cur, freq) {
+  if (freq === 'daily') return true;
+  const py = +prev.slice(0, 4), pm = +prev.slice(5, 7), cy = +cur.slice(0, 4), cm = +cur.slice(5, 7);
+  if (freq === 'monthly') return py !== cy || pm !== cm;
+  if (freq === 'quarterly') return py !== cy || Math.floor((pm - 1) / 3) !== Math.floor((cm - 1) / 3);
+  if (freq === 'weekly') {
+    const p = new Date(prev + 'T00:00:00Z'), c = new Date(cur + 'T00:00:00Z');
+    const dp = p.getUTCDay() || 7, dc = c.getUTCDay() || 7;
+    return (c - p) / 86400000 >= 7 || dc < dp;
+  }
+  return false;
+}
+/** Constant-target-weight simulation. Returns index values (start=100), turnover, costs and end weights. */
+function simulate(start, w, freq, bps, end = rows.length - 1) {
+  const R = rows.slice(start, end + 1);
+  const h = ASSETS.map((a, k) => 100 * w[k] / R[0][a.key]);
+  const vals = [100]; let turnover = 0, cost = 0, trades = 0;
+  for (let i = 1; i < R.length; i++) {
+    let v = sum(ASSETS.map((a, k) => h[k] * R[i][a.key]));
+    if (freq !== 'none' && isRebalanceDay(R[i - 1].date, R[i].date, freq)) {
+      const trade = sum(ASSETS.map((a, k) => Math.abs(w[k] * v - h[k] * R[i][a.key])));
+      if (trade > 1e-9) {
+        const c = trade * bps / 1e4;
+        turnover += trade / 2 / v; cost += c; trades++;
+        v -= c;
+        ASSETS.forEach((a, k) => { h[k] = w[k] * v / R[i][a.key]; });
+      }
+    }
+    vals.push(v);
+  }
+  const last = R[R.length - 1];
+  const finalV = vals[vals.length - 1];
+  const endW = ASSETS.map((a, k) => h[k] * last[a.key] / finalV);
+  return { vals, turnover, cost, trades, endW, dates: R.map(r => r.date) };
+}
+const toReturns = vals => vals.slice(1).map((v, i) => v / vals[i] - 1);
+const drawdownSeries = vals => { let p = -Infinity; return vals.map(v => { p = Math.max(p, v); return v / p - 1; }); };
+function maxDDInfo(vals) {
+  let peak = vals[0], pi = 0, worst = 0, wp = 0, wt = 0;
+  vals.forEach((v, i) => { if (v > peak) { peak = v; pi = i; } const d = v / peak - 1; if (d < worst) { worst = d; wp = pi; wt = i; } });
+  return { dd: worst, peakIdx: wp, troughIdx: wt };
+}
+function longestUnderwater(vals) {
+  let peak = -Infinity, run = 0, best = 0;
+  vals.forEach(v => { if (v >= peak) { peak = v; run = 0; } else { run++; best = Math.max(best, run); } });
+  return best;
+}
+function metrics(vals, rf, benchRets) {
+  const rets = toReturns(vals), n = rets.length;
+  const out = { n, rets };
+  if (n < 2) return { ...out, total: NaN, ann: NaN, vol: NaN, sharpe: NaN, sortino: NaN, maxDD: NaN, curDD: NaN, calmar: NaN, var95: NaN, cvar95: NaN, skew: NaN, kurt: NaN, hit: NaN };
+  const rfd = rf / TD;
+  out.total = vals[n] / vals[0] - 1;
+  out.ann = Math.pow(Math.max(1e-9, 1 + out.total), TD / n) - 1;
+  const sd = std(rets);
+  out.vol = sd * Math.sqrt(TD);
+  const ex = rets.map(r => r - rfd);
+  out.sharpe = sd > 0 ? mean(ex) / sd * Math.sqrt(TD) : NaN;
+  const dsd = Math.sqrt(mean(ex.map(e => Math.min(0, e) ** 2)));
+  out.sortino = dsd > 0 ? mean(ex) / dsd * Math.sqrt(TD) : NaN;
+  const dd = drawdownSeries(vals); out.dd = dd;
+  const mdi = maxDDInfo(vals); out.maxDD = mdi.dd; out.ddInfo = mdi;
+  out.curDD = dd[dd.length - 1];
+  out.calmar = out.maxDD < 0 ? out.ann / Math.abs(out.maxDD) : NaN;
+  const sorted = [...rets].sort((a, b) => a - b);
+  out.var95 = -pctile(sorted, 0.05);
+  const tail = sorted.filter(r => r <= pctile(sorted, 0.05));
+  out.cvar95 = tail.length ? -mean(tail) : NaN;
+  out.skew = skew(rets); out.kurt = exKurt(rets);
+  out.hit = rets.filter(r => r > 0).length / n;
+  if (benchRets && benchRets.length === n) {
+    const bex = benchRets.map(r => r - rfd);
+    const vb = std(bex) ** 2;
+    out.beta = cov(ex, bex) / vb;
+    out.alpha = (mean(ex) - out.beta * mean(bex)) * TD;
+    out.corrB = corr(rets, benchRets);
+    const active = rets.map((r, i) => r - benchRets[i]);
+    out.te = std(active) * Math.sqrt(TD);
+    out.ir = out.te > 0 ? mean(active) * TD / out.te : NaN;
+  }
+  return out;
+}
+function rolling(rets, N, fn) {
+  const out = [null];  // aligned with vals (rets[i] <-> vals[i+1])
+  for (let i = 0; i < rets.length; i++) out.push(i + 1 >= N ? fn(rets.slice(i + 1 - N, i + 1), i + 1 - N, i + 1) : null);
+  return out;
+}
+function compute() {
+  const n = rows.length; if (!n) return null;
+  const start = rangeStart();
+  const w = wv();
+  const rf = S.rf / 100;
+  const R = rows.slice(start);
+  const dates = R.map(r => r.date);
+  const sim = simulate(start, w, S.reb, S.cost);
+  const assetVals = ASSETS.map(a => R.map(r => r[a.key] / R[0][a.key] * 100));
+  const assetRets = assetVals.map(toReturns);
+  const bi = Math.max(0, ASSETS.findIndex(a => a.key === S.bench));
+  const pm = metrics(sim.vals, rf, assetRets[bi]);
+  const am = ASSETS.map((a, k) => metrics(assetVals[k], rf, assetRets[bi]));
+  // Full-history portfolio (independent of window) for calendar / stress / CPPI
+  const fullSim = simulate(0, w, S.reb, S.cost);
+  return { start, n: R.length, dates, sim, assetVals, assetRets, bi, pm, am, w, rf, fullSim };
+}
+
+/* ===================== Navigation & settings ===================== */
+function switchView(name, push = true) {
+  if (!VIEWS.includes(name)) name = 'overview';
+  activeView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === name));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  if (push) { try { history.replaceState(null, '', '#' + name); } catch (_) { location.hash = name; } }
+  renderActive();
+  window.scrollTo({ top: 0 });
+}
+function invalidate() { VIEWS.forEach(v => dirty.add(v)); C = compute(); renderActive(); }
+function renderActive() {
+  if (!rows.length) { if (activeView === 'cppi') renderCPPI(); return; }
+  if (!C) C = compute();
+  if (!dirty.has(activeView)) return;
+  dirty.delete(activeView);
+  ({ overview: renderOverview, risk: renderRisk, returns: renderReturns, rebalance: renderRebalance, stress: renderStress, cppi: renderCPPI, tvm: renderTVM })[activeView]();
+}
+document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => switchView(b.dataset.view)));
+window.addEventListener('hashchange', () => switchView(location.hash.slice(1), false));
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(safeStore.get(SETTINGS_KEY) || '{}');
+    if (['1M','3M','6M','YTD','ALL'].includes(s.range)) S.range = s.range;
+    if (['linear','log'].includes(s.scale)) S.scale = s.scale;
+    if (ok(s.rf)) S.rf = s.rf;
+    if (ASSETS.some(a => a.key === s.bench)) S.bench = s.bench;
+    if (['none','daily','weekly','monthly','quarterly'].includes(s.reb)) S.reb = s.reb;
+    if (ok(s.cost) && s.cost >= 0) S.cost = s.cost;
+  } catch (_) {}
+  try {
+    const saved = JSON.parse(safeStore.get(WEIGHT_KEY) || '{}');
+    const valid = ['vuaa','xnas','sec0'].every(k => ok(saved[k]) && saved[k] >= 0) && saved.vuaa + saved.xnas + saved.sec0 <= 100;
+    if (valid) { weights.vuaa = Math.round(saved.vuaa); weights.xnas = Math.round(saved.xnas); weights.sec0 = Math.round(saved.sec0); weights.vgwe = 100 - weights.vuaa - weights.xnas - weights.sec0; }
+  } catch (_) {}
+  $('a-rf').value = S.rf; $('a-bench').value = S.bench; $('a-reb').value = S.reb; $('a-cost').value = S.cost;
+  document.querySelectorAll('#range-seg button').forEach(b => b.classList.toggle('active', b.dataset.range === S.range));
+  document.querySelectorAll('#scale-seg button').forEach(b => b.classList.toggle('active', b.dataset.scale === S.scale));
+  ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).value = weights[k]);
+  updateWeightUI();
+}
+const saveSettings = () => safeStore.set(SETTINGS_KEY, JSON.stringify(S));
+function updateWeightUI() { ASSETS.forEach(a => $(a.wk + '-label').textContent = weights[a.wk] + '%'); }
+function updateWeights(changed) {
+  let v = Number($('w-vuaa').value), x = Number($('w-xnas').value), s0 = Number($('w-sec0').value);
+  if (v + x + s0 > 100) {
+    if (changed === 'vuaa') v = Math.max(0, 100 - x - s0);
+    if (changed === 'xnas') x = Math.max(0, 100 - v - s0);
+    if (changed === 'sec0') s0 = Math.max(0, 100 - v - x);
+  }
+  weights = { vuaa: v, xnas: x, sec0: s0, vgwe: 100 - v - x - s0 };
+  $('w-vuaa').value = v; $('w-xnas').value = x; $('w-sec0').value = s0;
+  safeStore.set(WEIGHT_KEY, JSON.stringify(weights));
+  updateWeightUI(); invalidate();
+}
+['vuaa','xnas','sec0'].forEach(k => $('w-' + k).addEventListener('input', () => updateWeights(k)));
+$('btn-reset-w').addEventListener('click', () => { weights = { ...DEFAULT_WEIGHTS }; ['vuaa','xnas','sec0'].forEach(k => $('w-' + k).value = weights[k]); safeStore.set(WEIGHT_KEY, JSON.stringify(weights)); updateWeightUI(); invalidate(); });
+$('a-rf').addEventListener('input', e => { const v = Number(e.target.value); if (ok(v)) { S.rf = v; saveSettings(); invalidate(); } });
+$('a-bench').addEventListener('change', e => { S.bench = e.target.value; saveSettings(); invalidate(); });
+$('a-reb').addEventListener('change', e => { S.reb = e.target.value; saveSettings(); invalidate(); });
+$('a-cost').addEventListener('input', e => { const v = Number(e.target.value); if (ok(v) && v >= 0) { S.cost = v; saveSettings(); invalidate(); } });
+document.querySelectorAll('#range-seg button').forEach(b => b.addEventListener('click', () => {
+  S.range = b.dataset.range; saveSettings();
+  document.querySelectorAll('#range-seg button').forEach(x => x.classList.toggle('active', x === b)); invalidate();
+}));
+document.querySelectorAll('#scale-seg button').forEach(b => b.addEventListener('click', () => {
+  S.scale = b.dataset.scale; saveSettings();
+  document.querySelectorAll('#scale-seg button').forEach(x => x.classList.toggle('active', x === b)); dirty.add('overview'); renderActive();
+}));
+function setTheme(t) { document.documentElement.setAttribute('data-theme', t); safeStore.set(THEME_KEY, t); applyChartTheme(); invalidate(); }
+$('btn-theme').addEventListener('click', () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+$('btn-print').addEventListener('click', () => window.print());
+$('btn-export').addEventListener('click', exportCSV);
+
+function exportCSV() {
+  if (!C) return;
+  const head = ['date', ...ASSETS.map(a => a.key + '_close'), 'portfolio_index', 'portfolio_return', 'portfolio_drawdown'];
+  const R = rows.slice(C.start), v = C.sim.vals, dd = C.pm.dd || [], r = [null, ...C.pm.rets];
+  const lines = [head.join(',')];
+  R.forEach((row, i) => lines.push([row.date, ...ASSETS.map(a => row[a.key]), v[i].toFixed(4), r[i] == null ? '' : r[i].toFixed(6), ok(dd[i]) ? dd[i].toFixed(6) : ''].join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `portfolio-monitor-${S.range}-${rows[rows.length - 1].date}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ===================== Overview ===================== */
+function sparkSVG(vals, color) {
+  const clean = vals.filter(ok); if (clean.length < 2) return '';
+  const mn = Math.min(...clean), mx = Math.max(...clean), rg = mx - mn || 1;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1) * 100).toFixed(2)},${(32 - (v - mn) / rg * 30).toFixed(2)}`);
+  const id = 'sg' + Math.random().toString(36).slice(2, 7);
+  return `<svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><polygon points="0,34 ${pts.join(' ')} 100,34" fill="url(#${id})"/><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
+function renderOverview() {
+  const t = th(), pm = C.pm;
+  const warn = $('short-warn');
+  if (C.n < 60) { warn.hidden = false; warn.innerHTML = `<strong>Short window.</strong> This window has only ${C.n} observations; annualized figures are extrapolated and risk statistics are noisy. Use a longer window for decisions.`; } else warn.hidden = true;
+
+  let latestMove = NaN;
+  if (snapshot) { const wk = Object.fromEntries(ASSETS.map((a, k) => [a.key, C.w[k]])); latestMove = sum(snapshot.data.map(i => (wk[i.ticker] || 0) * i.change_pct / 100)); }
+  $('kpis').innerHTML = [
+    kpi('Total return', fmtPct(pm.total), `${rows[C.start].date} → ${rows[rows.length - 1].date}`, sgn(pm.total)),
+    kpi('Annualized return', fmtPct(pm.ann), `Extrapolated from ${pm.n} trading days`, sgn(pm.ann), 'Geometric annualization of the window return on a 252-day basis.'),
+    kpi('Volatility', fmtPctU(pm.vol), 'Annualized σ of daily returns', 'neutral'),
+    kpi('Sharpe ratio', fmtNum(pm.sharpe), `Risk-free ${S.rf.toFixed(1)}% · Sortino ${fmtNum(pm.sortino)}`, sgn(pm.sharpe), 'Excess return over risk-free per unit of volatility.'),
+    kpi('Max drawdown', fmtPct(pm.maxDD), `Current ${fmtPct(pm.curDD)}`, pm.maxDD < -0.0005 ? 'negative' : 'neutral'),
+    kpi('Latest daily move', fmtPct(latestMove), 'Weight-adjusted, last close', sgn(latestMove))
+  ].join('');
+
+  // Market cards
+  if (snapshot) {
+    $('market-grid').innerHTML = snapshot.data.map(item => {
+      const k = ASSETS.findIndex(a => a.key === item.ticker); if (k < 0) return '';
+      const a = ASSETS[k], vals = C.assetVals[k], m = C.am[k];
+      return `<div class="card asset"><div class="asset-top"><div><div class="asset-name">${item.name}</div><div class="asset-ticker"><i class="swatch" style="background:${a.color}"></i>${item.ticker}</div></div><span class="asset-weight">${weights[a.wk]}%</span></div>
+        <div class="asset-price">${item.price.toFixed(2)} €</div>
+        <div class="asset-change ${sgn(item.change_pct)}">${item.change_pct >= 0 ? '+' : ''}${item.change_pct.toFixed(2)}% · ${item.change_amt >= 0 ? '+' : ''}${item.change_amt.toFixed(2)} €</div>
+        ${sparkSVG(vals, a.color)}
+        <div class="asset-foot"><span>Window <b class="${sgn(m.total)}">${fmtPct(m.total, 1)}</b></span><span>Off high ${fmtPct(m.curDD, 1)}</span></div></div>`;
+    }).join('');
+  }
+
+  // Chart
+  const ds = [
+    ...ASSETS.map((a, k) => ({ label: a.short, data: C.assetVals[k], borderColor: a.color + 'cc', borderWidth: 1.3, pointRadius: 0, tension: .15 })),
+    { label: 'Portfolio', data: C.sim.vals, borderColor: t.text, borderWidth: 2.6, pointRadius: 0, tension: .15 }
+  ];
+  mk('overview-chart', { type: 'line', data: { labels: C.dates, datasets: ds }, options: {
+    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } },
+    scales: scales(v => v, { y: { type: S.scale === 'log' ? 'logarithmic' : 'linear' } }) } });
+
+  // Asset table
+  const rowsHTML = ASSETS.map((a, k) => {
+    const m = C.am[k], contrib = C.w[k] * m.total;
+    return `<tr><td><i class="swatch" style="background:${a.color};margin-right:8px"></i>${a.short}</td><td class="${sgn(m.total)}">${fmtPct(m.total)}</td><td class="negative">${fmtPct(m.maxDD, 1)}</td><td class="${sgn(contrib)}">${fmtPct(contrib)}</td></tr>`;
+  }).join('');
+  $('asset-table').innerHTML = `<thead><tr><th>Asset</th><th>Return</th><th>Max DD</th><th title="Weight × asset return">Contrib.</th></tr></thead><tbody>${rowsHTML}
+    <tr class="hl"><td>Portfolio</td><td class="${sgn(pm.total)}">${fmtPct(pm.total)}</td><td class="negative">${fmtPct(pm.maxDD, 1)}</td><td class="${sgn(pm.total)}">${fmtPct(pm.total)}</td></tr></tbody>`;
+  $('attrib-note').textContent = S.reb === 'none' ? 'Contribution = target weight × asset return (exact for buy & hold from window start).' : 'Contribution is approximate when the portfolio is periodically rebalanced.';
+
+  // Drawdown chart
+  const bdd = drawdownSeries(C.assetVals[C.bi]);
+  $('dd-meta').textContent = `Max ${fmtPct(pm.maxDD)}${pm.ddInfo && pm.maxDD < 0 ? ` · ${C.dates[pm.ddInfo.peakIdx]} → ${C.dates[pm.ddInfo.troughIdx]}` : ''}`;
+  mk('dd-chart', { type: 'line', data: { labels: C.dates, datasets: [
+    { label: 'Portfolio', data: (pm.dd || []).map(v => v * 100), borderColor: t.red, backgroundColor: t.red + '30', fill: true, borderWidth: 1.8, pointRadius: 0, tension: .1 },
+    { label: ASSETS[C.bi].short, data: bdd.map(v => v * 100), borderColor: t.muted, borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0, tension: .1 }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } } },
+    scales: scales(v => v + '%', { y: { max: 0 } }) } });
+
+  // Rolling vol
+  const N = Math.max(5, Math.min(20, Math.floor(C.n / 4)));
+  $('roll-n').textContent = N;
+  const rv = rolling(pm.rets, N, r => std(r) * Math.sqrt(TD) * 100);
+  const bv = rolling(C.assetRets[C.bi], N, r => std(r) * Math.sqrt(TD) * 100);
+  mk('roll-chart', { type: 'line', data: { labels: C.dates, datasets: [
+    { label: 'Portfolio', data: rv, borderColor: t.accent, borderWidth: 2, pointRadius: 0, tension: .2, spanGaps: false },
+    { label: ASSETS[C.bi].short, data: bv, borderColor: t.muted, borderDash: [5, 4], borderWidth: 1.2, pointRadius: 0, tension: .2, spanGaps: false }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => c.parsed.y == null ? '' : `${c.dataset.label}: ${c.parsed.y.toFixed(1)}%` } } },
+    scales: scales(v => v + '%') } });
+}
+
+/* ===================== Risk & Analytics ===================== */
+function renderRisk() {
+  const t = th(), pm = C.pm, bn = ASSETS[C.bi].short;
+  $('risk-kpis').innerHTML = [
+    kpi('Sortino ratio', fmtNum(pm.sortino), 'Downside-risk adjusted', sgn(pm.sortino)),
+    kpi('Calmar ratio', fmtNum(pm.calmar), 'Ann. return ÷ |max DD|', sgn(pm.calmar)),
+    kpi('VaR 95% (1-day)', fmtPctU(pm.var95), `≈ ${fmtEur0(pm.var95 * 10000)} per €10,000`, 'negative', 'Historical simulation: loss exceeded on 5% of days.'),
+    kpi('CVaR 95% (1-day)', fmtPctU(pm.cvar95), 'Average loss beyond VaR', 'negative', 'Expected shortfall: mean of the worst 5% of daily returns.'),
+    kpi(`Beta vs ${bn}`, fmtNum(pm.beta), `Correlation ${fmtNum(pm.corrB)}`, 'neutral'),
+    kpi('Alpha (ann.)', fmtPct(pm.alpha), `Versus ${bn}, CAPM`, sgn(pm.alpha), 'Jensen alpha from daily excess returns; extrapolated and noisy on short samples.'),
+    kpi('Tracking error', fmtPctU(pm.te), `Active return σ vs ${bn}`, 'neutral'),
+    kpi('Information ratio', fmtNum(pm.ir), 'Active return ÷ TE', sgn(pm.ir))
+  ].join('');
+
+  const lines = ASSETS.map((a, k) => { const m = C.am[k]; return `<tr><td><i class="swatch" style="background:${a.color};margin-right:8px"></i>${a.short}</td><td class="${sgn(m.ann)}">${fmtPct(m.ann, 1)}</td><td>${fmtPctU(m.vol, 1)}</td><td class="${sgn(m.sharpe)}">${fmtNum(m.sharpe)}</td><td class="negative">${fmtPct(m.maxDD, 1)}</td><td>${fmtPctU(m.var95, 2)}</td><td>${k === C.bi ? '1.00' : fmtNum(m.beta)}</td></tr>`; }).join('');
+  $('risk-table').innerHTML = `<thead><tr><th>Asset</th><th>Ann. ret</th><th>Vol</th><th>Sharpe</th><th>Max DD</th><th>VaR95</th><th>β vs ${bn}</th></tr></thead><tbody>${lines}
+    <tr class="hl"><td>Portfolio</td><td class="${sgn(pm.ann)}">${fmtPct(pm.ann, 1)}</td><td>${fmtPctU(pm.vol, 1)}</td><td class="${sgn(pm.sharpe)}">${fmtNum(pm.sharpe)}</td><td class="negative">${fmtPct(pm.maxDD, 1)}</td><td>${fmtPctU(pm.var95, 2)}</td><td>${fmtNum(pm.beta)}</td></tr></tbody>`;
+
+  // correlation matrix
+  const cm = ASSETS.map((_, i) => ASSETS.map((_, j) => i === j ? 1 : corr(C.assetRets[i], C.assetRets[j])));
+  const cs = ['56px', ...ASSETS.map(() => '1fr')].join(' ');
+  let html = `<div class="heat" style="grid-template-columns:${cs}"><div></div>${ASSETS.map(a => `<div class="heat-head">${a.short}</div>`).join('')}`;
+  cm.forEach((r, i) => { html += `<div class="heat-rowlabel">${ASSETS[i].short}</div>`; r.forEach(v => { const a = ok(v) ? Math.min(1, Math.abs(v)) * .8 : 0; const col = v >= 0 ? `91,157,255` : cssVar('--heat-neg'); html += `<div class="heat-cell" style="background:rgba(${col},${a.toFixed(2)});color:${a > .45 ? '#fff' : 'var(--text)'}">${fmtNum(v)}</div>`; }); });
+  $('corr').innerHTML = html + '</div>';
+  const offs = []; cm.forEach((r, i) => r.forEach((v, j) => { if (j > i && ok(v)) offs.push([v, i, j]); }));
+  const avgC = mean(offs.map(o => o[0])), lo = offs.slice().sort((a, b) => a[0] - b[0])[0];
+  $('corr-note').textContent = offs.length ? `Average pairwise correlation ${avgC.toFixed(2)}. Best diversifier: ${ASSETS[lo[1]].short}/${ASSETS[lo[2]].short} (${lo[0].toFixed(2)}).` : '';
+
+  // risk contribution
+  const k = ASSETS.length, sig = ASSETS.map((_, i) => ASSETS.map((_, j) => cov(C.assetRets[i], C.assetRets[j])));
+  const sw = ASSETS.map((_, i) => sum(ASSETS.map((_, j) => sig[i][j] * C.w[j])));
+  const pv = sum(ASSETS.map((_, i) => C.w[i] * sw[i]));
+  const rc = ASSETS.map((_, i) => C.w[i] * sw[i] / pv);
+  const wsig = sum(ASSETS.map((_, i) => C.w[i] * Math.sqrt(sig[i][i])));
+  $('rc').innerHTML = ASSETS.map((a, i) => `<div class="rc-row"><span><i class="swatch" style="background:${a.color};margin-right:8px"></i>${a.short}</span>
+    <div class="bar" title="Weight ${(C.w[i] * 100).toFixed(0)}%"><div style="width:${Math.max(0, Math.min(100, rc[i] * 100))}%;background:${a.color}"></div></div>
+    <span style="text-align:right"><b>${(rc[i] * 100).toFixed(1)}%</b> <span style="color:var(--muted)">/ ${(C.w[i] * 100).toFixed(0)}% wt</span></span></div>`).join('');
+  const top = rc.indexOf(Math.max(...rc));
+  $('rc-note').textContent = ok(pv) ? `${ASSETS[top].short} drives ${(rc[top] * 100).toFixed(0)}% of risk on a ${(C.w[top] * 100).toFixed(0)}% weight. Diversification ratio ${(wsig / Math.sqrt(pv)).toFixed(2)} (1.00 = no diversification benefit).` : '';
+
+  // histogram
+  const r = pm.rets, bw = 0.005;
+  const lo2 = Math.floor(Math.min(...r) / bw) * bw, hi2 = Math.ceil(Math.max(...r) / bw) * bw;
+  const nb = Math.max(1, Math.round((hi2 - lo2) / bw)), bins = new Array(nb).fill(0);
+  r.forEach(v => { bins[Math.min(nb - 1, Math.floor((v - lo2) / bw))]++; });
+  const centers = bins.map((_, i) => lo2 + bw * (i + .5));
+  $('hist-meta').textContent = `VaR95 ${fmtPctU(pm.var95)} · skew ${fmtNum(pm.skew)} · ex. kurtosis ${fmtNum(pm.kurt)}`;
+  mk('hist-chart', { type: 'bar', data: { labels: centers.map(c => (c * 100).toFixed(2) + '%'), datasets: [{ data: bins, backgroundColor: centers.map(c => c < -pm.var95 ? t.red : c < 0 ? t.red + '77' : t.green + 'aa'), borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...tooltipStyle(), callbacks: { title: i => 'Daily return ≈ ' + i[0].label, label: c => `${c.parsed.y} days` } } },
+      scales: { x: { grid: { display: false }, ticks: { color: t.muted, maxTicksLimit: 9, maxRotation: 0 } }, y: { grid: { color: t.grid }, border: { display: false }, ticks: { color: t.muted, precision: 0 } } } } });
+
+  // rolling beta/corr using full history vs benchmark
+  const fs = C.fullSim, fv = rows.map(rw => rw[ASSETS[C.bi].key]);
+  const pr = toReturns(fs.vals), br = toReturns(fv);
+  const N = Math.min(60, Math.max(10, Math.floor(pr.length / 2)));
+  const rb = rolling(pr, N, (_, a, b) => cov(pr.slice(a, b), br.slice(a, b)) / (std(br.slice(a, b)) ** 2));
+  const rcn = rolling(pr, N, (_, a, b) => corr(pr.slice(a, b), br.slice(a, b)));
+  mk('beta-chart', { type: 'line', data: { labels: rows.map(x => x.date), datasets: [
+    { label: `Beta vs ${bn}`, data: rb, borderColor: t.accent, borderWidth: 2, pointRadius: 0, tension: .2, yAxisID: 'y' },
+    { label: 'Correlation', data: rcn, borderColor: t.amber, borderWidth: 1.6, borderDash: [5, 4], pointRadius: 0, tension: .2, yAxisID: 'y1' }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOpts(), tooltip: tooltipStyle() },
+    scales: { x: scales(v => v).x, y: { position: 'left', grid: { color: t.grid }, border: { display: false }, ticks: { color: t.accent, callback: v => v.toFixed(2) }, title: { display: true, text: 'Beta', color: t.muted } },
+      y1: { position: 'right', grid: { display: false }, border: { display: false }, min: -0.2, max: 1.05, ticks: { color: t.amber, callback: v => v.toFixed(1) }, title: { display: true, text: 'Correlation', color: t.muted } } } } });
+}
+
+/* ===================== Returns calendar ===================== */
+function monthlyReturns(prices, dates) {
+  const out = []; let prevEnd = prices[0], curKey = dates[0].slice(0, 7), lastIdx = 0;
+  for (let i = 1; i <= prices.length; i++) {
+    const key = i < prices.length ? dates[i].slice(0, 7) : null;
+    if (key !== curKey) { out.push({ ym: curKey, ret: prices[lastIdx] / prevEnd - 1 }); prevEnd = prices[lastIdx]; curKey = key; }
+    lastIdx = i;
+  }
+  return out;
+}
+function renderReturns() {
+  const sel = $('cal-asset');
+  if (!sel.options.length) { sel.innerHTML = `<option value="P">Portfolio</option>` + ASSETS.map((a, k) => `<option value="${k}">${a.short} · ${a.label}</option>`).join(''); sel.onchange = () => { dirty.add('returns'); renderActive(); }; }
+  const dates = rows.map(r => r.date);
+  const prices = sel.value === 'P' ? C.fullSim.vals : rows.map(r => r[ASSETS[+sel.value].key]);
+  const mr = monthlyReturns(prices, dates);
+  const years = [...new Set(mr.map(m => m.ym.slice(0, 4)))];
+  const cs = '54px ' + '1fr '.repeat(12) + '64px';
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const heat = r => { if (!ok(r)) return ''; const a = Math.min(.85, .12 + Math.abs(r) / .08 * .7); return `background:rgba(${r >= 0 ? cssVar('--heat-pos') : cssVar('--heat-neg')},${a.toFixed(2)})`; };
+  let html = `<div class="tbl-scroll"><div class="heat" style="grid-template-columns:${cs};min-width:760px"><div></div>${mn.map(m => `<div class="heat-head">${m}</div>`).join('')}<div class="heat-head">Year</div>`;
+  years.forEach(y => {
+    html += `<div class="heat-rowlabel">${y}</div>`;
+    let comp = 1;
+    for (let m = 1; m <= 12; m++) {
+      const f = mr.find(x => x.ym === `${y}-${String(m).padStart(2, '0')}`);
+      if (f) comp *= 1 + f.ret;
+      html += f ? `<div class="heat-cell" style="${heat(f.ret)}">${(f.ret * 100).toFixed(1)}%</div>` : `<div class="heat-cell" style="background:var(--panel-2);color:var(--muted)">·</div>`;
+    }
+    html += `<div class="heat-cell" style="${heat(comp - 1)};border:1px solid var(--border-2)">${((comp - 1) * 100).toFixed(1)}%</div>`;
+  });
+  $('cal-heat').innerHTML = html + '</div></div>';
+  const pos = mr.filter(m => m.ret > 0).length;
+  $('cal-meta').textContent = `${pos}/${mr.length} positive months · first month is partial (starts ${dates[0]})`;
+
+  // extremes (portfolio)
+  const pv = C.fullSim.vals, pr = toReturns(pv);
+  const extreme = (series, L, label, max) => {
+    let best = null;
+    for (let i = L; i < series.length; i++) { const r = series[i] / series[i - L] - 1; if (!best || (max ? r > best.r : r < best.r)) best = { r, a: dates[i - L], b: dates[i] }; }
+    return best ? `<tr><td>${label}</td><td class="${sgn(best.r)}">${fmtPct(best.r)}</td><td>${L === 1 ? best.b : best.a + ' → ' + best.b}</td></tr>` : '';
+  };
+  const mBest = mr.slice().sort((a, b) => b.ret - a.ret), mWorst = mr.slice().sort((a, b) => a.ret - b.ret);
+  $('extremes').innerHTML = `<thead><tr><th>Period</th><th>Return</th><th>Date</th></tr></thead><tbody>
+    ${extreme(pv, 1, 'Best day', true)}${extreme(pv, 1, 'Worst day', false)}${extreme(pv, 5, 'Best 5 days', true)}${extreme(pv, 5, 'Worst 5 days', false)}
+    <tr><td>Best month</td><td class="${sgn(mBest[0].ret)}">${fmtPct(mBest[0].ret)}</td><td>${mBest[0].ym}</td></tr>
+    <tr><td>Worst month</td><td class="${sgn(mWorst[0].ret)}">${fmtPct(mWorst[0].ret)}</td><td>${mWorst[0].ym}</td></tr></tbody>`;
+
+  const ups = pr.filter(r => r > 0), dns = pr.filter(r => r < 0);
+  const fm = C.fullSim.vals, fmx = metrics(fm, C.rf, null);
+  const rowx = (l, v, c = '') => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value ${c}">${v}</span></div>`;
+  $('ret-stats').innerHTML = rowx('Trading days observed', pr.length) + rowx('Win rate (daily)', fmtPctU(fmx.hit, 1)) +
+    rowx('Average gain / average loss', `${fmtPct(mean(ups))} / ${fmtPct(mean(dns))}`) +
+    rowx('Gain-to-loss ratio', fmtNum(mean(ups) / Math.abs(mean(dns)))) +
+    rowx('Skewness', fmtNum(fmx.skew)) + rowx('Excess kurtosis', fmtNum(fmx.kurt)) +
+    rowx('Longest time under water', `${longestUnderwater(fm)} trading days`) +
+    rowx('Positive months', `${pos} of ${mr.length}`);
+}
+
+/* ===================== Rebalance ===================== */
+function renderRebalance() {
+  const t = th(), V = Math.max(0, Number($('rb-value').value) || 0), band = Math.max(0, Number($('rb-band').value) || 0) / 100;
+  const last = rows[rows.length - 1], bps = S.cost, manual = $('rb-start').value === 'manual', whole = $('rb-whole').value === 'whole';
+  const man = $('rb-manual');
+  man.hidden = !manual;
+  if (manual && !man.children.length) { man.innerHTML = ASSETS.map((a, k) => `<div><label for="rb-m${k}">${a.short} holding (€)</label><input id="rb-m${k}" type="number" min="0" step="10" value="${Math.round(V * C.w[k])}"></div>`).join(''); ASSETS.forEach((a, k) => $('rb-m' + k).addEventListener('input', () => { dirty.add('rebalance'); renderActive(); })); }
+  const holdings = manual ? ASSETS.map((a, k) => Math.max(0, Number($('rb-m' + k).value) || 0)) : C.sim.endW.map(x => x * V);
+  const total = sum(holdings) || 1;
+  const cur = holdings.map(h => h / total), tgtVal = C.w.map(x => x * total);
+  const trades = ASSETS.map((a, k) => {
+    let amt = tgtVal[k] - holdings[k], sh = amt / last[a.key];
+    if (whole) { sh = Math.round(sh); amt = sh * last[a.key]; }
+    return { a, k, amt, sh, drift: cur[k] - C.w[k], out: Math.abs(cur[k] - C.w[k]) > band };
+  });
+  const turn = sum(trades.map(x => Math.abs(x.amt))) / 2, estCost = sum(trades.map(x => Math.abs(x.amt))) * bps / 1e4;
+  const outN = trades.filter(x => x.out).length;
+  $('rb-meta').textContent = manual ? 'manual holdings' : `drift since ${rows[C.start].date} · ${S.reb === 'none' ? 'buy & hold' : S.reb + ' rebalanced'}`;
+  $('rb-table').innerHTML = `<thead><tr><th>Asset</th><th>Target</th><th>Current</th><th>Drift</th><th>Trade €</th><th>Shares</th><th>Status</th></tr></thead><tbody>${trades.map(x => `<tr><td><i class="swatch" style="background:${x.a.color};margin-right:8px"></i>${x.a.short}</td><td>${(C.w[x.k] * 100).toFixed(1)}%</td><td>${(cur[x.k] * 100).toFixed(1)}%</td><td class="${x.out ? (x.drift > 0 ? 'negative' : 'positive') : 'neutral'}">${x.drift >= 0 ? '+' : ''}${(x.drift * 100).toFixed(1)} pp</td><td class="${x.amt >= 0 ? 'positive' : 'negative'}">${x.amt >= 0 ? 'Buy' : 'Sell'} ${fmtEur0(Math.abs(x.amt))}</td><td>${x.sh >= 0 ? '+' : '−'}${Math.abs(x.sh).toFixed(whole ? 0 : 3)}</td><td>${x.out ? '<span class="negative">Out of band</span>' : '<span style="color:var(--muted)">In band</span>'}</td></tr>`).join('')}</tbody>`;
+  $('rb-note').textContent = `Prices: last close ${last.date}. Execution prices will differ.`;
+  $('rb-summary').innerHTML = `<strong>${outN ? `${outN} of ${ASSETS.length} positions are outside the ±${(band * 100).toFixed(1)} pp band.` : `All positions are within the ±${(band * 100).toFixed(1)} pp band — no rebalance needed.`}</strong> Full rebalance would trade <strong>${fmtEur0(turn)}</strong> one-way (${(turn / total * 100).toFixed(1)}% of the portfolio) at an estimated cost of <strong>${fmtEur(estCost)}</strong> at ${bps} bps.${outN ? ' Tip: direct new contributions to underweight assets first to cut trading cost.' : ''}`;
+
+  // policy comparison
+  const pols = [['none', 'Buy & hold'], ['monthly', 'Monthly'], ['quarterly', 'Quarterly'], ['weekly', 'Weekly'], ['daily', 'Daily']];
+  const colors = [t.muted, t.accent, t.green, t.amber, t.purple];
+  const sims = pols.map(([f]) => simulate(C.start, C.w, f, bps));
+  const ms = sims.map(s => metrics(s.vals, C.rf, null));
+  $('rb-policy').innerHTML = `<thead><tr><th>Policy</th><th>Return</th><th>Vol</th><th>Sharpe</th><th>Max DD</th><th>Turnover</th><th>Cost drag</th></tr></thead><tbody>${pols.map(([f, l], i) => `<tr class="${f === S.reb ? 'hl' : ''}"><td>${l}</td><td class="${sgn(ms[i].total)}">${fmtPct(ms[i].total)}</td><td>${fmtPctU(ms[i].vol, 1)}</td><td>${fmtNum(ms[i].sharpe)}</td><td class="negative">${fmtPct(ms[i].maxDD, 1)}</td><td>${fmtPctU(sims[i].turnover, 1)}</td><td>${fmtNum(sims[i].cost, 2)}%</td></tr>`).join('')}</tbody>`;
+  mk('rb-chart', { type: 'line', data: { labels: C.dates, datasets: pols.map(([, l], i) => ({ label: l, data: sims[i].vals, borderColor: colors[i], borderWidth: i === 0 ? 2 : 1.4, pointRadius: 0, tension: .15 })) },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } }, scales: scales(v => v) } });
+}
+['rb-value', 'rb-band'].forEach(id => $(id).addEventListener('input', () => { dirty.add('rebalance'); renderActive(); }));
+['rb-whole'].forEach(id => $(id).addEventListener('change', () => { dirty.add('rebalance'); renderActive(); }));
+$('rb-start').addEventListener('change', () => { $('rb-manual').innerHTML = ''; dirty.add('rebalance'); renderActive(); });
+
+/* ===================== Stress ===================== */
+function renderStress() {
+  const t = th(), shock = Number($('st-shock').value) / 100, V = Math.max(0, Number($('st-value').value) || 0), extra = (Number($('st-semi').value) || 0) / 100;
+  $('st-shock-label').textContent = `${shock >= 0 ? '+' : '−'}${Math.abs(shock * 100).toFixed(0)}%`;
+  document.querySelectorAll('#st-presets button').forEach(b => b.classList.toggle('active', Number(b.dataset.s) === shock * 100));
+  const bR = toReturns(rows.map(r => r['VUAA.DE'])), cw = C.sim.endW;  // current (drifted) weights
+  const betas = ASSETS.map((a, k) => { const r = toReturns(rows.map(x => x[a.key])); return cov(r, bR) / (std(bR) ** 2); });
+  const impact = shk => ASSETS.map((a, k) => betas[k] * shk + (a.short === 'SEC0' ? extra * (shk < 0 ? 1 : 0) : 0));
+  const shocks = impact(shock), pPct = sum(shocks.map((s, k) => cw[k] * s));
+  $('st-table').innerHTML = `<thead><tr><th>Asset</th><th>Weight</th><th>β</th><th>Shock</th><th>P&amp;L</th></tr></thead><tbody>${ASSETS.map((a, k) => `<tr><td><i class="swatch" style="background:${a.color};margin-right:8px"></i>${a.short}</td><td>${(cw[k] * 100).toFixed(1)}%</td><td>${betas[k].toFixed(2)}</td><td class="${sgn(shocks[k])}">${fmtPct(shocks[k], 1)}</td><td class="${sgn(shocks[k])}">${fmtEur0(V * cw[k] * shocks[k])}</td></tr>`).join('')}
+    <tr class="hl"><td>Portfolio</td><td>100%</td><td>${sum(cw.map((x, k) => x * betas[k])).toFixed(2)}</td><td class="${sgn(pPct)}">${fmtPct(pPct, 1)}</td><td class="${sgn(pPct)}">${fmtEur0(V * pPct)}</td></tr></tbody>`;
+  $('st-summary').innerHTML = `A <strong>${fmtPct(shock, 0)}</strong> equity shock implies about <strong class="${sgn(pPct)}">${fmtPct(pPct, 1)}</strong> for the portfolio (<strong>${fmtEur0(V * pPct)}</strong>), taking ${fmtEur0(V)} to <strong>${fmtEur0(V * (1 + pPct))}</strong>. Portfolio β to the S&amp;P 500 is <strong>${sum(cw.map((x, k) => x * betas[k])).toFixed(2)}</strong>.${extra ? ` Includes an extra ${(extra * 100).toFixed(0)} pp hit to SEC0 on down-shocks.` : ''}`;
+  const ladder = [-40, -30, -20, -10, 10, 20];
+  mk('st-chart', { type: 'bar', data: { labels: ladder.map(s => (s > 0 ? '+' : '') + s + '%'), datasets: [{ data: ladder.map(s => V * sum(impact(s / 100).map((x, k) => cw[k] * x))), backgroundColor: ladder.map(s => s < 0 ? t.red + 'cc' : t.green + 'cc'), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { ...tooltipStyle(), callbacks: { label: c => fmtEur0(c.parsed.y) } } }, scales: { x: { grid: { display: false }, ticks: { color: t.muted } }, y: { grid: { color: t.grid }, border: { display: false }, ticks: { color: t.muted, callback: v => '€' + Number(v).toLocaleString('en-DE', { notation: 'compact' }) } } } } });
+  const dates = rows.map(r => r.date), pv = C.fullSim.vals;
+  const worst = L => { let b = null; for (let i = L; i < pv.length; i++) { const r = pv[i] / pv[i - L] - 1; if (!b || r < b.r) b = { r, a: dates[i - L], z: dates[i] }; } return b; };
+  const mdi = maxDDInfo(pv);
+  $('st-worst').innerHTML = `<thead><tr><th>Window</th><th>Return</th><th>Dates</th><th>On ${fmtEur0(V)}</th></tr></thead><tbody>${[[1, '1 day'], [5, '5 days'], [10, '10 days'], [21, '21 days']].map(([L, lab]) => { const b = worst(L); return b ? `<tr><td>${lab}</td><td class="negative">${fmtPct(b.r)}</td><td>${L === 1 ? b.z : b.a + ' → ' + b.z}</td><td class="negative">${fmtEur0(V * b.r)}</td></tr>` : ''; }).join('')}<tr><td>Max drawdown</td><td class="negative">${fmtPct(mdi.dd)}</td><td>${dates[mdi.peakIdx]} → ${dates[mdi.troughIdx]}</td><td class="negative">${fmtEur0(V * mdi.dd)}</td></tr></tbody>`;
+}
+$('st-shock').addEventListener('input', () => { dirty.add('stress'); renderActive(); });
+['st-value', 'st-semi'].forEach(id => $(id).addEventListener('input', () => { dirty.add('stress'); renderActive(); }));
+document.querySelectorAll('#st-presets button').forEach(b => b.addEventListener('click', () => { $('st-shock').value = b.dataset.s; dirty.add('stress'); renderActive(); }));
+
+/* ===================== CPPI ===================== */
+function renderCPPI() {
+  const V = Math.max(0, Number($('cppi-value').value) || 0);
+  const floorPct = Math.min(100, Math.max(0, Number($('cppi-floor').value) || 0)) / 100;
+  const m = Math.max(0, Number($('cppi-m').value) || 0);
+  const F = V * floorPct, Cu = Math.max(0, V - F), E = Math.min(V, m * Cu), cash = Math.max(0, V - E);
+  const eq = V > 0 ? E / V * 100 : 0;
+  const status = Cu <= 0 ? 'No cushion: equity exposure is reduced to zero.' : eq >= 99.9 ? 'Current cushion permits full equity exposure under this rule.' : 'Defensive allocation: part of the portfolio remains in cash.';
+  const rr = (l, v) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`;
+  $('cppi-results').innerHTML = rr('Portfolio value V', fmtEur(V)) + rr('Floor F', fmtEur(F)) + rr('Cushion C', fmtEur(Cu)) + rr('Equity exposure E', fmtEur(E)) + rr('Cash', fmtEur(cash)) + rr('Equity / Cash', `${eq.toFixed(1)}% / ${(100 - eq).toFixed(1)}%`) +
+    `<div class="bar" style="margin:10px 0 4px"><div style="width:${Math.min(100, eq)}%"></div></div><div class="status">${status}</div>`;
+  if (!rows.length || !C) return;
+  // Backtest on full-history portfolio
+  const V0 = V > 0 ? V : 1000, r = toReturns(C.fullSim.vals), rfd = C.rf / TD, dates = rows.map(x => x.date);
+  let v = V0, f = V0 * floorPct, e = Math.min(v, m * Math.max(0, v - f));
+  const cv = [v], fl = [f], eqS = [e / v], bh = [V0];
+  let cost = 0, minCush = (v - f) / v;
+  r.forEach((x, i) => {
+    const eAfter = e * (1 + x), cAfter = (v - e) * (1 + rfd);
+    v = eAfter + cAfter; f *= 1 + rfd;
+    const ne = Math.min(Math.max(0, v), m * Math.max(0, v - f));
+    const c = Math.abs(ne - eAfter) * S.cost / 1e4; v -= c; cost += c; e = Math.min(ne, Math.max(0, v));
+    cv.push(v); fl.push(f); eqS.push(v > 0 ? e / v : 0); bh.push(V0 * C.fullSim.vals[i + 1] / 100); minCush = Math.min(minCush, (v - f) / v);
+  });
+  const cm = metrics(cv, C.rf, null), bm = metrics(bh, C.rf, null);
+  const t = th();
+  $('cppi-bt-meta').textContent = `${dates[0]} → ${dates[dates.length - 1]} · m=${m} · floor ${(floorPct * 100).toFixed(0)}% · costs ${S.cost} bps`;
+  mk('cppi-chart', { type: 'line', data: { labels: dates, datasets: [
+    { label: 'CPPI', data: cv, borderColor: t.accent, borderWidth: 2.2, pointRadius: 0, tension: .1 },
+    { label: 'Buy & hold portfolio', data: bh, borderColor: t.muted, borderWidth: 1.4, pointRadius: 0, tension: .1 },
+    { label: 'Floor', data: fl, borderColor: t.red, borderDash: [6, 4], borderWidth: 1.4, pointRadius: 0 }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { label: c => `${c.dataset.label}: ${fmtEur0(c.parsed.y)}` } } }, scales: scales(v => '€' + Number(v).toLocaleString('en-DE', { notation: 'compact' })) } });
+  $('cppi-bt-table').innerHTML = `<thead><tr><th>Strategy</th><th>Final</th><th>Return</th><th>Vol</th><th>Max DD</th><th>Avg equity</th></tr></thead><tbody>
+    <tr class="hl"><td>CPPI</td><td>${fmtEur0(cv[cv.length - 1])}</td><td class="${sgn(cm.total)}">${fmtPct(cm.total)}</td><td>${fmtPctU(cm.vol, 1)}</td><td class="negative">${fmtPct(cm.maxDD, 1)}</td><td>${fmtPctU(mean(eqS), 0)}</td></tr>
+    <tr><td>Buy &amp; hold</td><td>${fmtEur0(bh[bh.length - 1])}</td><td class="${sgn(bm.total)}">${fmtPct(bm.total)}</td><td>${fmtPctU(bm.vol, 1)}</td><td class="negative">${fmtPct(bm.maxDD, 1)}</td><td>100%</td></tr></tbody>`;
+}
+['cppi-value', 'cppi-floor', 'cppi-m'].forEach(id => $(id).addEventListener('input', () => { dirty.add('cppi'); renderActive(); }));
+
+/* ===================== Goal projection (v2 model preserved) ===================== */
+let tvmCtx = null;
+function loadGoalSettings() {
+  try {
+    const saved = JSON.parse(safeStore.get(GOAL_STORAGE_KEY) || '{}');
+    const map = { start: 'tvm-start', targetDate: 'tvm-target-date', initial: 'tvm-initial', daily: 'tvm-daily', target: 'tvm-target' };
+    Object.entries(map).forEach(([k, id]) => { if (saved[k] !== undefined && saved[k] !== null && saved[k] !== '') $(id).value = saved[k]; });
+  } catch (_) {}
+  try {
+    const mc = JSON.parse(safeStore.get(MC_KEY) || '{}');
+    if (ok(mc.mu)) $('mc-mu').value = mc.mu; if (ok(mc.vol)) $('mc-vol').value = mc.vol;
+  } catch (_) {}
+}
+function saveGoalSettings() {
+  safeStore.set(GOAL_STORAGE_KEY, JSON.stringify({ start: $('tvm-start').value, targetDate: $('tvm-target-date').value, initial: $('tvm-initial').value, daily: $('tvm-daily').value, target: $('tvm-target').value }));
+}
+function setGoalError(msg) {
+  $('tvm-results').innerHTML = `<div class="card kpi" style="grid-column:1/-1"><div class="kpi-label">Projection unavailable</div><div class="error">${msg}</div></div>`;
+  $('tvm-status').hidden = true; $('tvm-status').textContent = '';
+  $('tvm-chart-meta').textContent = 'Projection unavailable';
+  clearTVMChart(); tvmCtx = null; renderMC();
+}
+function futureValue(pv, pmt, n, r) {
+  if (Math.abs(r) < 1e-10) return pv + pmt * n;
+  const g = Math.pow(1 + r, n);
+  return pv * g + pmt * (g - 1) / r;
+}
+function solveRequiredDailyRate(pv, pmt, n, target) {
+  if (!(n > 0) || !(target > 0) || pv < 0 || pmt < 0) return { ok: false, message: 'Invalid projection inputs.' };
+  let low = annualToDaily(-0.50), high = annualToDaily(2.00);
+  if (target < futureValue(pv, pmt, n, low)) return { ok: false, message: 'Required CAGR is below the supported −50% annual bound.' };
+  if (target > futureValue(pv, pmt, n, high)) return { ok: false, message: 'Required CAGR exceeds the supported +200% annual bound.' };
+  for (let i = 0; i < 120; i++) { const mid = (low + high) / 2; if (futureValue(pv, pmt, n, mid) >= target) high = mid; else low = mid; }
+  return { ok: true, rate: (low + high) / 2 };
+}
+function clearTVMChart() { killChart('tvm-chart'); }
+function renderTVM() {
+  const results = $('tvm-results'), statusBox = $('tvm-status');
+  saveGoalSettings();
+  if (!rows.length) { setGoalError('Market history is not available.'); return; }
+  const startStr = $('tvm-start').value, targetStr = $('tvm-target-date').value;
+  const initial = Math.max(0, Number($('tvm-initial').value) || 0), pmt = Math.max(0, Number($('tvm-daily').value) || 0), target = Number($('tvm-target').value) || 0;
+  if (!startStr || !targetStr || target <= 0) { setGoalError('Enter a valid start month, target month, and wealth target.'); return; }
+  const startD = new Date(startStr + '-01T00:00:00'), targetD = new Date(targetStr + '-01T00:00:00');
+  const firstHistD = new Date(rows[0].date + 'T00:00:00'), lastHistD = new Date(rows[rows.length - 1].date + 'T00:00:00');
+  if (targetD <= startD) { setGoalError('Target month must be after start month.'); return; }
+  if (startD > lastHistD) { setGoalError(`Start month is after the latest available market history (${rows[rows.length - 1].date}).`); return; }
+  if (targetD <= lastHistD) { setGoalError(`Target month must be later than the latest available market history (${rows[rows.length - 1].date}).`); return; }
+  let startIndex = rows.findIndex(d => new Date(d.date + 'T00:00:00') >= startD);
+  if (startIndex < 0) { setGoalError('No market observation is available on or after the selected start month.'); return; }
+  if (startD < firstHistD) startIndex = 0;
+  const effectiveStartD = new Date(rows[startIndex].date + 'T00:00:00');
+  const totalPeriods = calendarDaysBetween(effectiveStartD, targetD);
+  const baseline = solveRequiredDailyRate(initial, pmt, totalPeriods, target);
+  if (!baseline.ok) { setGoalError(baseline.message); return; }
+  const w = wv(), startRow = rows[startIndex];
+  const shares = ASSETS.map((a, k) => initial * w[k] / startRow[a.key]);
+  let requiredValue = initial, previousMarketDate = effectiveStartD;
+  const modeledPath = [], requiredPath = [];
+  for (let i = startIndex; i < rows.length; i++) {
+    const d = rows[i], marketDate = new Date(d.date + 'T00:00:00');
+    if (i > startIndex) {
+      const days = Math.max(1, calendarDaysBetween(previousMarketDate, marketDate)), contribution = pmt * days;
+      ASSETS.forEach((a, k) => { shares[k] += contribution * w[k] / d[a.key]; });
+      requiredValue = futureValue(requiredValue, pmt, days, baseline.rate);
+    }
+    const modeled = sum(ASSETS.map((a, k) => shares[k] * d[a.key])), ts = marketDate.getTime();
+    modeledPath.push({ x: ts, y: modeled }); requiredPath.push({ x: ts, y: requiredValue });
+    previousMarketDate = marketDate;
+  }
+  const currentModeled = modeledPath[modeledPath.length - 1].y, currentRequired = requiredPath[requiredPath.length - 1].y;
+  const fundingRatio = currentRequired > 0 ? currentModeled / currentRequired * 100 : 0, pathGap = currentModeled - currentRequired;
+  const periodsLeft = calendarDaysBetween(lastHistD, targetD);
+  const adaptive = solveRequiredDailyRate(currentModeled, pmt, periodsLeft, target);
+  const baselineCAGR = dailyToAnnual(baseline.rate) * 100;
+  if (!adaptive.ok) {
+    results.innerHTML = kpi('Baseline CAGR', baselineCAGR.toFixed(2) + '%', 'Original required annual return.') + kpi('Funding Ratio', fundingRatio.toFixed(1) + '%', `Modeled ${fmtEur(currentModeled)} / Required ${fmtEur(currentRequired)}`) + `<div class="card kpi" style="grid-column:1/-1"><div class="error">${adaptive.message}</div></div>`;
+    statusBox.hidden = true; $('tvm-chart-meta').textContent = 'Adaptive projection unavailable'; clearTVMChart(); tvmCtx = null; renderMC(); return;
+  }
+  let projDate = new Date(lastHistD.getFullYear(), lastHistD.getMonth() + 1, 1);
+  while (projDate <= targetD) {
+    requiredPath.push({ x: projDate.getTime(), y: futureValue(currentRequired, pmt, calendarDaysBetween(lastHistD, projDate), baseline.rate) });
+    projDate.setMonth(projDate.getMonth() + 1);
+  }
+  const adaptiveCAGR = dailyToAnnual(adaptive.rate) * 100, cagrDelta = adaptiveCAGR - baselineCAGR, zeroReturnTarget = initial + pmt * totalPeriods;
+  results.innerHTML =
+    kpi('Adaptive CAGR', adaptiveCAGR.toFixed(2) + '%', adaptiveCAGR < 0 ? 'No positive return is required from the current position.' : `${cagrDelta >= 0 ? '+' : ''}${cagrDelta.toFixed(2)} pp vs baseline.`, cagrDelta <= 0 ? 'positive' : 'negative') +
+    kpi('Funding Ratio', fundingRatio.toFixed(1) + '%', `Modeled ${fmtEur(currentModeled)} / Required ${fmtEur(currentRequired)}`, fundingRatio >= 100 ? 'positive' : 'negative') +
+    kpi('Path Gap', `${pathGap >= 0 ? '+' : ''}${fmtEur(pathGap)}`, 'Modeled portfolio minus required path.', pathGap >= 0 ? 'positive' : 'negative') +
+    kpi('Baseline CAGR', baselineCAGR.toFixed(2) + '%', baselineCAGR < 0 ? 'Calendar-day contributions alone exceed the selected target.' : 'Original required annual return.');
+  const gapText = pathGap >= 0 ? `ahead of the required path by <strong>${fmtEur(pathGap)}</strong>` : `behind the required path by <strong>${fmtEur(Math.abs(pathGap))}</strong>`;
+  const rateText = cagrDelta > 0 ? `The required CAGR has increased by <strong>${cagrDelta.toFixed(2)} percentage points</strong> from baseline.` : cagrDelta < 0 ? `The required CAGR has decreased by <strong>${Math.abs(cagrDelta).toFixed(2)} percentage points</strong> from baseline.` : 'The required CAGR is unchanged from baseline.';
+  const contributionText = baselineCAGR < 0 ? ` At a 0% return, contributing <strong>${fmtEur(pmt)} per calendar day</strong> would reach about <strong>${fmtEur(zeroReturnTarget)}</strong> by the target date, above the <strong>${fmtEur(target)}</strong> goal. The negative required CAGR therefore indicates excess contribution capacity, not an expected market loss.` : '';
+  statusBox.innerHTML = `The modeled portfolio is ${gapText}. ${rateText}${contributionText}`; statusBox.hidden = false;
+  $('tvm-chart-meta').textContent = `Proportional calendar time · Market data through ${rows[rows.length - 1].date} · Target ${targetStr}`;
+  tvmCtx = { currentModeled, lastHistD, targetD, pmt, target, requiredPath, adaptiveRate: adaptive.rate };
+  renderTVMChart(modeledPath, requiredPath, lastHistD.getTime(), effectiveStartD.getTime(), targetD.getTime());
+  renderMC();
+}
+function renderTVMChart(modeled, required, latestTs, startTs, targetTs) {
+  const t = th();
+  const marker = { id: 'latestDataMarker', afterDraw(chart, args, o) {
+    const x = chart.scales.x.getPixelForValue(o.value), { left, top, bottom, right } = chart.chartArea;
+    if (!Number.isFinite(x) || x < left || x > right) return;
+    const c = chart.ctx; c.save(); c.strokeStyle = 'rgba(125,138,166,.6)'; c.lineWidth = 1; c.setLineDash([4, 4]); c.beginPath(); c.moveTo(x, top); c.lineTo(x, bottom); c.stroke(); c.setLineDash([]);
+    c.fillStyle = t.muted; c.font = '11px Inter, system-ui, sans-serif'; c.textAlign = x > right - 90 ? 'right' : 'left'; c.fillText('Latest data', x > right - 90 ? x - 6 : x + 6, top + 12); c.restore();
+  } };
+  mk('tvm-chart', { type: 'line', plugins: [marker], data: { datasets: [
+    { label: 'Modeled portfolio', data: modeled, parsing: false, borderColor: t.green, borderWidth: 2.2, pointRadius: 0, tension: .12 },
+    { label: 'Required path', data: required, parsing: false, borderColor: t.purple, borderWidth: 2, borderDash: [6, 5], pointRadius: 0, tension: .12 }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    plugins: { latestDataMarker: { value: latestTs }, legend: legendOpts(), tooltip: { ...tooltipStyle(), callbacks: { title: it => it.length ? new Date(it[0].parsed.x).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '', label: c => `${c.dataset.label}: ${fmtEur(Number(c.parsed.y))}` } } },
+    scales: { x: { type: 'linear', min: startTs, max: targetTs, grid: { color: t.grid }, ticks: { color: t.muted, maxTicksLimit: 8, maxRotation: 0, callback: v => new Date(Number(v)).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) } },
+      y: { position: 'right', beginAtZero: true, grid: { color: t.grid }, border: { display: false }, ticks: { color: t.muted, maxTicksLimit: 7, callback: v => '€' + Number(v).toLocaleString('en-DE', { notation: 'compact', maximumFractionDigits: 1 }) } } } } });
+}
+['tvm-start', 'tvm-target-date', 'tvm-initial', 'tvm-daily', 'tvm-target'].forEach(id => $(id).addEventListener('input', () => { dirty.add('tvm'); renderActive(); }));
+
+/* ---- Monte Carlo ---- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function renderMC() {
+  const kp = $('mc-kpis');
+  if (!tvmCtx) { kp.innerHTML = `<div class="card kpi" style="grid-column:1/-1"><div class="error">Simulation unavailable until the plan above is valid.</div></div>`; killChart('mc-chart'); return; }
+  const mu = Number($('mc-mu').value) / 100, sigma = Math.max(0, Number($('mc-vol').value) || 0) / 100;
+  safeStore.set(MC_KEY, JSON.stringify({ mu: $('mc-mu').value, vol: $('mc-vol').value }));
+  if (!ok(mu) || mu <= -1) { kp.innerHTML = `<div class="card kpi" style="grid-column:1/-1"><div class="error">Enter a valid expected return.</div></div>`; return; }
+  const { currentModeled, lastHistD, targetD, pmt, target, requiredPath } = tvmCtx;
+  const dates = []; let d = new Date(lastHistD.getFullYear(), lastHistD.getMonth() + 1, 1);
+  while (d <= targetD) { dates.push(new Date(d)); d.setMonth(d.getMonth() + 1); }
+  if (!dates.length) return;
+  const PATHS = 3000, rnd = mulberry32(20261004), steps = dates.length;
+  const lm = Math.log(1 + mu);
+  const vals = new Float64Array(PATHS).fill(currentModeled);
+  const bands = { p10: [], p50: [], p90: [] };
+  let prev = lastHistD;
+  for (let s = 0; s < steps; s++) {
+    const days = calendarDaysBetween(prev, dates[s]), yrs = days / CALENDAR_DAYS_PER_YEAR;
+    const drift = lm * yrs - 0.5 * sigma * sigma * yrs, vs = sigma * Math.sqrt(yrs), contrib = pmt * days;
+    for (let p = 0; p < PATHS; p++) {
+      let u1 = rnd(); if (u1 < 1e-12) u1 = 1e-12; const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * rnd());
+      vals[p] = vals[p] * Math.exp(drift + vs * z) + contrib;
+    }
+    const sorted = Float64Array.from(vals).sort();
+    bands.p10.push({ x: dates[s].getTime(), y: pctile(sorted, .10) }); bands.p50.push({ x: dates[s].getTime(), y: pctile(sorted, .50) }); bands.p90.push({ x: dates[s].getTime(), y: pctile(sorted, .90) });
+    prev = dates[s];
+  }
+  const final = Float64Array.from(vals).sort(), hit = final.filter(v => v >= target).length / PATHS;
+  const p10 = pctile(final, .10), p50 = pctile(final, .50), p90 = pctile(final, .90);
+  kp.innerHTML = kpi('Probability of reaching goal', fmtPctU(hit, 1), `P(wealth ≥ ${fmtEur0(target)} at target)`, hit >= .75 ? 'positive' : hit >= .5 ? 'neutral' : 'negative') +
+    kpi('Median outcome', fmtEur0(p50), `${p50 >= target ? 'Above' : 'Below'} goal by ${fmtEur0(Math.abs(p50 - target))}`, p50 >= target ? 'positive' : 'negative') +
+    kpi('Downside (P10)', fmtEur0(p10), '1-in-10 bad outcome', p10 >= target ? 'positive' : 'negative') +
+    kpi('Upside (P90)', fmtEur0(p90), '1-in-10 good outcome', 'positive');
+  const t = th();
+  const req = requiredPath.filter(p => p.x >= lastHistD.getTime());
+  mk('mc-chart', { type: 'line', data: { datasets: [
+    { label: 'P90', data: bands.p90, parsing: false, borderColor: t.green + '88', borderWidth: 1, pointRadius: 0, fill: false },
+    { label: 'P10–P90 range', data: bands.p10, parsing: false, borderColor: t.red + '88', borderWidth: 1, pointRadius: 0, fill: '-1', backgroundColor: t.accent + '1f' },
+    { label: 'Median', data: bands.p50, parsing: false, borderColor: t.accent, borderWidth: 2.2, pointRadius: 0 },
+    { label: 'Required path', data: req, parsing: false, borderColor: t.purple, borderDash: [6, 5], borderWidth: 1.8, pointRadius: 0 }
+  ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    plugins: { legend: { ...legendOpts(), labels: { ...legendOpts().labels, filter: i => i.text !== 'P90' } }, tooltip: { ...tooltipStyle(), callbacks: { title: it => it.length ? new Date(it[0].parsed.x).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '', label: c => `${c.dataset.label}: ${fmtEur0(c.parsed.y)}` } } },
+    scales: { x: { type: 'linear', min: lastHistD.getTime(), max: targetD.getTime(), grid: { color: t.grid }, ticks: { color: t.muted, maxTicksLimit: 8, maxRotation: 0, callback: v => new Date(Number(v)).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) } },
+      y: { position: 'right', beginAtZero: true, grid: { color: t.grid }, border: { display: false }, ticks: { color: t.muted, maxTicksLimit: 7, callback: v => '€' + Number(v).toLocaleString('en-DE', { notation: 'compact', maximumFractionDigits: 1 }) } } } } });
+}
+['mc-mu', 'mc-vol'].forEach(id => $(id).addEventListener('input', renderMC));
+$('mc-use-hist').addEventListener('click', () => { if (!C) return; const v = metrics(C.fullSim.vals, C.rf, null).vol; if (ok(v)) { $('mc-vol').value = (v * 100).toFixed(1); renderMC(); } });
+
+/* ===================== Init ===================== */
+async function init() {
+  applyChartTheme();
+  loadSettings(); loadGoalSettings(); renderCPPI();
+  try {
+    const [h, d] = await Promise.all([fetch('../history.json?t=' + Date.now()), fetch('../data.json?t=' + Date.now())]);
+    if (!h.ok || !d.ok) throw new Error('Data request failed');
+    const raw = await h.json(); snapshot = await d.json();
+    rows = raw.filter(r => r && r.date && ASSETS.every(a => ok(r[a.key]) && r[a.key] > 0)).sort((a, b) => a.date < b.date ? -1 : 1);
+    if (rows.length < 3) throw new Error('Not enough history');
+    $('sync-status').className = 'sync ok'; $('sync-status').textContent = 'Last sync: ' + snapshot.timestamp;
+    const h0 = location.hash.slice(1); if (VIEWS.includes(h0)) { activeView = h0; document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === h0)); document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === h0)); }
+    invalidate();
+  } catch (err) {
+    $('sync-status').className = 'sync err'; $('sync-status').textContent = 'Data unavailable';
+    $('market-grid').innerHTML = '<div class="card kpi error" style="grid-column:1/-1">Could not load data.json or history.json.</div>';
+    console.error(err);
+  }
+}
+init();
+</script>
+</body>
+</html>
