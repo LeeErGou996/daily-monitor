@@ -250,7 +250,7 @@
         <div class="chart-wrap"><canvas id="tvm-chart"></canvas></div>
         <details>
           <summary>Methodology and limitation</summary>
-          <p>Baseline CAGR is the return originally required from the selected start point. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. Historical values use recorded daily closes, so the modeled portfolio is not the same as a live brokerage balance.</p>
+          <p>Baseline CAGR is the return originally required from the selected start point. Adaptive CAGR recalculates the return required from the latest modeled portfolio value. Funding Ratio is modeled portfolio value divided by the required path value, while Path Gap is their euro difference. A negative required CAGR means the planned contributions alone are sufficient to exceed the target at a 0% return. Horizontal chart spacing is proportional to calendar time, and the vertical marker separates recorded market history from the forward required path. Historical values use recorded daily closes, so the modeled portfolio is not the same as a live brokerage balance.</p>
         </details>
       </div>
     </section>
@@ -574,7 +574,6 @@ function calculateTVM() {
     vgwe: initial * (weights.vgwe/100) / startRow['VGWE.DE']
   };
   let requiredValue = initial;
-  const labels = [];
   const modeledPath = [];
   const requiredPath = [];
 
@@ -589,13 +588,13 @@ function calculateTVM() {
       requiredValue = requiredValue * (1 + baseline.rate) + pmt;
     }
     const modeled = shares.vuaa*d['VUAA.DE'] + shares.xnas*d['XNAS.DE'] + shares.sec0*d['SEC0.DE'] + shares.vgwe*d['VGWE.DE'];
-    labels.push(d.date);
-    modeledPath.push(modeled);
-    requiredPath.push(requiredValue);
+    const timestamp = new Date(d.date + 'T00:00:00').getTime();
+    modeledPath.push({ x: timestamp, y: modeled });
+    requiredPath.push({ x: timestamp, y: requiredValue });
   }
 
-  const currentModeled = modeledPath[modeledPath.length-1];
-  const currentRequired = requiredPath[requiredPath.length-1];
+  const currentModeled = modeledPath[modeledPath.length-1].y;
+  const currentRequired = requiredPath[requiredPath.length-1].y;
   const fundingRatio = currentRequired > 0 ? currentModeled/currentRequired*100 : 0;
   const pathGap = currentModeled - currentRequired;
   const periodsLeft = (targetD - lastHistD) / 86400000 * (252 / 365.25);
@@ -622,18 +621,17 @@ function calculateTVM() {
   }
 
   let projDate = new Date(lastHistD.getFullYear(), lastHistD.getMonth()+1, 1);
-  let projectedRequired = currentRequired;
   while (projDate <= targetD) {
-    for (let d=0; d<21; d++) projectedRequired = projectedRequired*(1+baseline.rate)+pmt;
-    labels.push(`${projDate.getFullYear()}-${String(projDate.getMonth()+1).padStart(2,'0')}`);
-    modeledPath.push(null);
-    requiredPath.push(projectedRequired);
+    const elapsedPeriods = (projDate - effectiveStartD) / 86400000 * (252 / 365.25);
+    const projectedRequired = futureValue(initial, pmt, elapsedPeriods, baseline.rate);
+    requiredPath.push({ x: projDate.getTime(), y: projectedRequired });
     projDate.setMonth(projDate.getMonth()+1);
   }
 
   const baselineCAGR = dailyToAnnual(baseline.rate) * 100;
   const adaptiveCAGR = dailyToAnnual(adaptive.rate) * 100;
   const cagrDelta = adaptiveCAGR - baselineCAGR;
+  const zeroReturnTarget = initial + pmt * totalPeriods;
   const fundingClass = fundingRatio >= 100 ? 'positive' : 'negative';
   const gapClass = pathGap >= 0 ? 'positive' : 'negative';
   const adaptiveClass = cagrDelta <= 0 ? 'positive' : 'negative';
@@ -642,7 +640,7 @@ function calculateTVM() {
     <div class="goal-kpi">
       <div class="goal-kpi-label">Adaptive CAGR</div>
       <div class="goal-kpi-value ${adaptiveClass}">${adaptiveCAGR.toFixed(2)}%</div>
-      <div class="goal-kpi-sub">${cagrDelta >= 0 ? '+' : ''}${cagrDelta.toFixed(2)} pp vs baseline.</div>
+      <div class="goal-kpi-sub">${adaptiveCAGR < 0 ? 'No positive return is required from the current position.' : `${cagrDelta >= 0 ? '+' : ''}${cagrDelta.toFixed(2)} pp vs baseline.`}</div>
     </div>
     <div class="goal-kpi">
       <div class="goal-kpi-label">Funding Ratio</div>
@@ -657,7 +655,7 @@ function calculateTVM() {
     <div class="goal-kpi">
       <div class="goal-kpi-label">Baseline CAGR</div>
       <div class="goal-kpi-value">${baselineCAGR.toFixed(2)}%</div>
-      <div class="goal-kpi-sub">Original required annual return.</div>
+      <div class="goal-kpi-sub">${baselineCAGR < 0 ? 'Contributions alone exceed the selected target.' : 'Original required annual return.'}</div>
     </div>`;
 
   const gapText = pathGap >= 0
@@ -669,38 +667,119 @@ function calculateTVM() {
       ? `The required CAGR has decreased by <strong>${Math.abs(cagrDelta).toFixed(2)} percentage points</strong> from baseline.`
       : 'The required CAGR is unchanged from baseline.';
 
-  statusBox.innerHTML = `The modeled portfolio is ${gapText}. ${rateText}`;
+  const contributionText = baselineCAGR < 0
+    ? ` At a 0% return, the planned contributions would reach about <strong>${fmtEur(zeroReturnTarget)}</strong> by the target date, above the <strong>${fmtEur(target)}</strong> goal. The negative required CAGR therefore indicates excess contribution capacity, not an expected market loss.`
+    : '';
+  statusBox.innerHTML = `The modeled portfolio is ${gapText}. ${rateText}${contributionText}`;
   statusBox.hidden = false;
-  document.getElementById('tvm-chart-meta').textContent = `Market data through ${historyData[historyData.length-1].date} · Target ${targetStr}`;
+  document.getElementById('tvm-chart-meta').textContent = `Proportional calendar time · Market data through ${historyData[historyData.length-1].date} · Target ${targetStr}`;
 
-  renderTVMChart(labels, modeledPath, requiredPath);
+  renderTVMChart(
+    modeledPath,
+    requiredPath,
+    lastHistD.getTime(),
+    effectiveStartD.getTime(),
+    targetD.getTime()
+  );
 }
-function renderTVMChart(labels, modeled, required) {
+function renderTVMChart(modeled, required, latestTimestamp, startTimestamp, targetTimestamp) {
   const ctx = document.getElementById('tvm-chart');
   if (tvmChart) tvmChart.destroy();
+
+  const latestDataMarker = {
+    id: 'latestDataMarker',
+    afterDraw(chart, args, options) {
+      const xScale = chart.scales.x;
+      const x = xScale.getPixelForValue(options.value);
+      const { left, top, bottom, right } = chart.chartArea;
+      if (!Number.isFinite(x) || x < left || x > right) return;
+
+      const c = chart.ctx;
+      c.save();
+      c.strokeStyle = 'rgba(148,163,184,.5)';
+      c.lineWidth = 1;
+      c.setLineDash([4, 4]);
+      c.beginPath();
+      c.moveTo(x, top);
+      c.lineTo(x, bottom);
+      c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = '#94a3b8';
+      c.font = '11px Inter, ui-sans-serif, system-ui, sans-serif';
+      c.textAlign = x > right - 90 ? 'right' : 'left';
+      c.fillText('Latest data', x > right - 90 ? x - 6 : x + 6, top + 12);
+      c.restore();
+    }
+  };
+
+  const formatChartDate = timestamp => new Date(Number(timestamp)).toLocaleDateString('en-GB', {
+    month: 'short',
+    year: 'numeric'
+  });
+
   tvmChart = new Chart(ctx, {
     type:'line',
-    data:{ labels, datasets:[
-      { label:'Modeled portfolio', data:modeled, borderColor:'#34d399', borderWidth:2, pointRadius:0, tension:.12, spanGaps:false },
-      { label:'Required path', data:required, borderColor:'#c084fc', borderWidth:2, borderDash:[6,5], pointRadius:0, tension:.12 }
+    data:{ datasets:[
+      {
+        label:'Modeled portfolio',
+        data:modeled,
+        parsing:false,
+        borderColor:'#34d399',
+        borderWidth:2,
+        pointRadius:0,
+        tension:.12,
+        spanGaps:false
+      },
+      {
+        label:'Required path',
+        data:required,
+        parsing:false,
+        borderColor:'#c084fc',
+        borderWidth:2,
+        borderDash:[6,5],
+        pointRadius:0,
+        tension:.12
+      }
     ]},
+    plugins:[latestDataMarker],
     options:{
-      responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'nearest',axis:'x',intersect:false},
       plugins:{
+        latestDataMarker:{value:latestTimestamp},
         legend:{labels:{color:'#cbd5e1',boxWidth:14}},
         tooltip:{
           callbacks:{
-            label: context => `${context.dataset.label}: ${fmtEur(Number(context.raw))}`
+            title: items => items.length ? new Date(items[0].parsed.x).toLocaleDateString('en-GB', {
+              day:'2-digit',
+              month:'short',
+              year:'numeric'
+            }) : '',
+            label: context => `${context.dataset.label}: ${fmtEur(Number(context.parsed.y))}`
           }
         }
       },
       scales:{
-        x:{grid:{display:false},ticks:{color:'#64748b',maxTicksLimit:8,maxRotation:0}},
+        x:{
+          type:'linear',
+          min:startTimestamp,
+          max:targetTimestamp,
+          grid:{color:'rgba(148,163,184,.06)'},
+          ticks:{
+            color:'#64748b',
+            maxTicksLimit:8,
+            maxRotation:0,
+            callback:value => formatChartDate(value)
+          }
+        },
         y:{
           position:'right',
+          beginAtZero:true,
           grid:{color:'rgba(148,163,184,.09)'},
           ticks:{
             color:'#64748b',
+            maxTicksLimit:7,
             callback: value => '€' + Number(value).toLocaleString('en-DE', {notation:'compact', maximumFractionDigits:1})
           }
         }
