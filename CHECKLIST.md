@@ -24,6 +24,9 @@
 - [x] Make the current model value and required path value explicit without adding another primary metric.
 - [x] Persist Goal Projection inputs locally so the planning state survives refresh.
 - [x] Improve the progress chart labels and currency formatting without changing the underlying projection model.
+- [ ] Plot Goal Projection on a proportional time axis so daily historical observations and monthly forward points use their true calendar spacing.
+- [ ] Mark the boundary between recorded market history and forward required-path projection.
+- [ ] Explain negative required CAGR as a contribution-versus-target condition without changing the solver.
 
 ## 5. UX and release validation
 - [x] Add responsive layout for narrow screens.
@@ -31,3 +34,4 @@
 - [x] Keep methodology sections collapsed by default.
 - [x] Verify SEC0 snapshot data, SEC0 historical backfill, four-asset portfolio calculations, CPPI, TVM, and responsive rendering before publishing. CI data update and GitHub Pages deployment both passed.
 - [x] Verify the Goal Projection redesign on desktop and narrow screens, including persisted inputs, solver error states, and chart rendering. Default-parameter regression passed and GitHub Pages build/deploy completed successfully.
+- [ ] Verify proportional date spacing, latest-data boundary marker, negative-CAGR explanation, and unchanged numerical outputs before publishing.
