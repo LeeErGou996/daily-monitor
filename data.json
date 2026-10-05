@@ -1,5 +1,5 @@
 {
-    "timestamp": "2026-10-05 00:36:26",
+    "timestamp": "2026-10-05 07:28:32",
     "data": [
         {
             "ticker": "VUAA.DE",
@@ -21,6 +21,13 @@
             "price": 19.7,
             "change_pct": 3.56,
             "change_amt": 0.68
+        },
+        {
+            "ticker": "VGWE.DE",
+            "name": "全球高息 (VGWE)",
+            "price": 92.7,
+            "change_pct": 0.64,
+            "change_amt": 0.59
         }
     ]
 }
