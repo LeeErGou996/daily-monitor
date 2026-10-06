@@ -10,6 +10,11 @@ on:
 
 permissions:
   contents: write
+  pages: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
 
 jobs:
   update-data:
@@ -37,5 +42,26 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           git add data.json history.json
-          git commit -m "🤖 Auto-update financial data & history [skip ci]" || echo "No changes to commit"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          # 不再使用 [skip ci]：它可能同时跳过 GitHub Pages 的构建部署
+          git commit -m "🤖 Auto-update financial data & history"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+
+      - name: 🔁 确保 Pages 重新构建（失败自动重试）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # 托管 runner 偶发拿不到机器时，主动请求一次 Pages 构建兜底
+          for i in 1 2 3; do
+            gh api -X POST "repos/${{ github.repository }}/pages/builds" && exit 0
+            sleep $((i * 20))
+          done
+          echo "Pages rebuild request failed; will be retried by next scheduled run"
