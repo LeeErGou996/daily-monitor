@@ -1,5 +1,5 @@
 {
-    "timestamp": "2026-11-07 18:43:29",
+    "timestamp": "2026-11-08 06:53:28",
     "data": [
         {
             "ticker": "VUAA.DE",
@@ -7,6 +7,13 @@
             "price": 128.97,
             "change_pct": -0.06,
             "change_amt": -0.07
+        },
+        {
+            "ticker": "XNAS.DE",
+            "name": "纳指100 (XNAS)",
+            "price": 56.61,
+            "change_pct": 0.62,
+            "change_amt": 0.35
         },
         {
             "ticker": "SEC0.DE",
