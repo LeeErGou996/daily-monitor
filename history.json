@@ -1597,9 +1597,16 @@
     },
     {
         "date": "2026-11-24",
-        "VUAA.DE": 127.93,
-        "XNAS.DE": 56.31,
-        "SEC0.DE": 14.06,
-        "VGWE.DE": 93.98
+        "VUAA.DE": null,
+        "XNAS.DE": 55.01,
+        "SEC0.DE": null,
+        "VGWE.DE": null
+    },
+    {
+        "date": "2026-11-25",
+        "VUAA.DE": 126.33,
+        "XNAS.DE": null,
+        "SEC0.DE": 12.82,
+        "VGWE.DE": 93.96
     }
 ]
